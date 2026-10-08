@@ -201,7 +201,7 @@ report="${TMPDIR:-/tmp}/zero-pre-push-$$.json"
 trap 'rm -f "$report"' EXIT INT TERM
 
 # shellcheck disable=SC2086 # runargs is a word list on purpose
-if node_modules/.bin/vitest $runargs --reporter=basic --reporter=json --outputFile.json="$report"; then
+if node_modules/.bin/vitest $runargs --reporter=default --reporter=json --outputFile.json="$report"; then
   echo "pre-push: green in $(( $(date +%s) - started ))s. Pushing."
   exit 0
 fi
@@ -216,7 +216,7 @@ if [ -z "$red" ]; then
   echo "  once more before this is called a failure."
   echo ""
   # shellcheck disable=SC2086
-  if node_modules/.bin/vitest $runargs --reporter=basic; then
+  if node_modules/.bin/vitest $runargs --reporter=default; then
     echo ""
     echo "pre-push: green on the second run, in $(( $(date +%s) - started ))s total."
     echo "The first run died on the machine, not on the code. Pushing."
@@ -239,7 +239,7 @@ echo ""
 # "options.minThreads and options.maxThreads must not conflict" before it runs
 # a single test.
 # shellcheck disable=SC2086
-if node_modules/.bin/vitest run --reporter=basic --no-file-parallelism $red; then
+if node_modules/.bin/vitest run --reporter=default --no-file-parallelism $red; then
   echo ""
   echo "pre-push: they all pass on their own, in $(( $(date +%s) - started ))s total."
   echo "That was the machine, not the code. Pushing."
