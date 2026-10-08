@@ -424,7 +424,7 @@ function ArtifactEmbed({ product, path, fallback, open, onOpen }: {
 // not the user's, and it is the part that was unnecessary. `filesFromRuns` stays,
 // because App.tsx still reads it to choose the design a card opens itself on.
 
-export function Focus({ artifactView, previewSample, onOpenArtifact, artifactSlot, inlineArtifacts, headerTarget, cornerHeaderTarget, crumbFrom, item, parent, blockedBy, filed = [], runningMode, engineChoice, runningEngine, codexModels, codexModelDefault, session, live, stoppable: stoppableIn, productDir, repoDir, selectedOption, interruptedFrom, onBackToInterrupted, returnedFromSnooze, scheduledUntil, scheduledByAgent, replyOpen, sending, stalled, openDoc, resumeAt, onScrolled, onOpenDoc, onRedeliver, onUnschedule, onClose, onResolve, onPick, onReply, onReplySend, onReplyClose, onStop, onRunNow, onReopen, onSnooze, onReveal, onOpenItem, onApproveFiled, onRejectFiled, onNotice, onHandToAgent, onAddPeople }: {
+export function Focus({ artifactView, previewSample, onOpenArtifact, artifactSlot, inlineArtifacts, headerTarget, cornerHeaderTarget, crumbFrom, item, parent, blockedBy, filed = [], runningMode, runningCodexMode, engineChoice, runningEngine, codexModels, codexModelDefault, session, live, stoppable: stoppableIn, productDir, repoDir, selectedOption, interruptedFrom, onBackToInterrupted, returnedFromSnooze, scheduledUntil, scheduledByAgent, replyOpen, sending, stalled, openDoc, resumeAt, onScrolled, onOpenDoc, onRedeliver, onUnschedule, onClose, onResolve, onPick, onReply, onReplySend, onReplyClose, onStop, onRunNow, onReopen, onSnooze, onReveal, onOpenItem, onApproveFiled, onRejectFiled, onNotice, onHandToAgent, onAddPeople }: {
   previewSample?: string;
   /**
    * A MESSAGE FROM A PERSON IS NOT WORK UNTIL SHE SAYS SO. The one line under
@@ -455,6 +455,7 @@ export function Focus({ artifactView, previewSample, onOpenArtifact, artifactSlo
   // whether or not this message has changed it. Claude Code prints its own
   // mode in the status bar the whole time; this is the same fact.
   runningMode?: PermissionMode;
+  runningCodexMode?: CodexModeId;
   // WHETHER THIS MAC OFFERS A CHOICE OF CODING AGENT, and which one this row
   // runs on. Both off the snapshot and both answered by main: the byline may
   // name an engine only where there is one to name, and the two rules that
@@ -1734,7 +1735,7 @@ export function Focus({ artifactView, previewSample, onOpenArtifact, artifactSlo
                than beside the box: that row is where this card already keeps
                the things you press. It is handed in whole so there is one stop
                button in the app and this card cannot grow a second. */
-            <DockComposer item={item} runningMode={runningMode} runningEngine={runningEngine} codexModels={codexModels} codexModelDefault={codexModelDefault} onSend={onReplySend} onClose={onReplyClose} onNotice={onNotice} openModel={openModel} talkTo={direct ? talkNames : null} stop={stopButton} />
+            <DockComposer item={item} runningMode={runningMode} runningEngine={runningEngine} runningCodexMode={runningCodexMode} codexModels={codexModels} codexModelDefault={codexModelDefault} onSend={onReplySend} onClose={onReplyClose} onNotice={onNotice} openModel={openModel} talkTo={direct ? talkNames : null} stop={stopButton} />
           ) : (
             /*
              * THE FOLDED BOX SHOWS WHAT IS IN IT. A pill saying "Reply…" over
@@ -1955,12 +1956,13 @@ function ModePicker({ value, options, label, onChange }: {
   );
 }
 
-function DockComposer({ item, runningMode, runningEngine, codexModels = [], codexModelDefault = null, onSend, onClose, onNotice, stop, openModel = false, talkTo = null }: {
+function DockComposer({ item, runningMode, runningCodexMode, runningEngine, codexModels = [], codexModelDefault = null, onSend, onClose, onNotice, stop, openModel = false, talkTo = null }: {
   item: WorkItem;
   /** On a conversation with a person, everyone's first name: the box replies
    *  to them, and nothing about an agent, a priority or a model is offered. */
   talkTo?: string[] | null;
   runningMode?: PermissionMode;
+  runningCodexMode?: CodexModeId;
   /**
    * WHICH CODING AGENT THIS ROW'S NEXT SEND WILL REACH, for the slash menu and
    *  nothing else. Everything in that menu is Claude Code's -- the eight
@@ -2279,7 +2281,7 @@ function DockComposer({ item, runningMode, runningEngine, codexModels = [], code
   // never a blank: a footer that says nothing when nothing is picked is the
   // footer she could not find.
   const running: PermissionMode | CodexModeId = mode
-    ?? (claudeCode ? (runningMode ?? 'auto') : CODEX_DEFAULT_MODE);
+    ?? (claudeCode ? (runningMode ?? 'auto') : (runningCodexMode ?? CODEX_DEFAULT_MODE));
   /** What the chip and the toast say, in whichever engine's words this row is. */
   const statusOf = (m: PermissionMode | CodexModeId) => (claudeCode
     ? MODE_STATUS[m as PermissionMode]
@@ -2318,7 +2320,7 @@ function DockComposer({ item, runningMode, runningEngine, codexModels = [], code
        somebody is actually asking, which is what this send will do. `running`
        resolves to the project's own value the moment `mode` is null. */
     if (m === null) {
-      onNotice(`Permissions · back to this project's setting, ${statusOf(claudeCode ? (runningMode ?? 'auto') : CODEX_DEFAULT_MODE)}`);
+      onNotice(`Permissions · back to this project's setting, ${statusOf(claudeCode ? (runningMode ?? 'auto') : (runningCodexMode ?? CODEX_DEFAULT_MODE))}`);
       return;
     }
     onNotice(`Permissions · ${statusOf(m)} for this thread`);

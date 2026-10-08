@@ -22,7 +22,16 @@ import { NAME } from '../shared/product-name.mjs';
 // with one sound instead of four rewrites and four chimes.
 const COALESCE_MS = 1500;
 
-export function createNotifier({ window, Notification, powerMonitor, coalesceMs = COALESCE_MS }) {
+// A focused window is attended only while the user is active. The companion
+// and banner must agree on this boundary or an admitted notice loses its pill.
+export function isAtInbox(window, powerMonitor) {
+  let focused = false, idleMs = 0;
+  try { focused = !!window && !window.isDestroyed() && window.isFocused(); } catch {}
+  try { idleMs = powerMonitor.getSystemIdleTime() * 1000; } catch {}
+  return atTheApp({ focused, idleMs });
+}
+
+export function createNotifier({ window, Notification, powerMonitor, coalesceMs = COALESCE_MS, attention = null }) {
   // Everything she has not seen since she last had the window, keyed by id so
   // a repeated push is idempotent. Insertion order is arrival order.
   const unseen = new Map();
@@ -34,13 +43,6 @@ export function createNotifier({ window, Notification, powerMonitor, coalesceMs 
   // once, plus one more if an approval turns up afterwards.
   let spoke = false;
   let spokeAsk = false;
-
-  const idleMs = () => {
-    try { return powerMonitor.getSystemIdleTime() * 1000; } catch { return 0; }
-  };
-  const focused = () => {
-    try { return !!window && !window.isDestroyed() && window.isFocused(); } catch { return false; }
-  };
 
   const takeDown = () => {
     if (!live) return;
@@ -62,7 +64,7 @@ export function createNotifier({ window, Notification, powerMonitor, coalesceMs 
 
   const speak = () => {
     timer = null;
-    if (atTheApp({ focused: focused(), idleMs: idleMs() })) return seen();
+    if (isAtInbox(window, powerMonitor)) return seen();
     const items = [...unseen.values()];
     // She has already been told once this stretch. Everything since is banked
     // on its own row and she will have it the moment she is back; saying it out
@@ -71,6 +73,16 @@ export function createNotifier({ window, Notification, powerMonitor, coalesceMs 
     const say = banner(items);
     if (!say) return;
     takeDown();
+    // The owner-selected edge companion is the primary attention surface.
+    // Keep the same coalescing/suppression rules; no duplicate OS banner.
+    let delivered = false;
+    try { delivered = !!attention?.(items); }
+    catch { console.warn('zero: companion attention unavailable; trying native notification.'); }
+    if (delivered) {
+      spoke = true;
+      if (items.some(i => i.kind === 'approval')) spokeAsk = true;
+      return;
+    }
     let n;
     try {
       // No subtitle. macOS puts that field directly under the title in nearly
@@ -122,10 +134,15 @@ export function createNotifier({ window, Notification, powerMonitor, coalesceMs 
       if (!Array.isArray(arrivals) || !arrivals.length) return;
       // Asked before banking anything, so that a burst arriving while she is
       // at the app is dropped rather than saved up for when she leaves.
-      if (atTheApp({ focused: focused(), idleMs: idleMs() })) return seen();
+      if (isAtInbox(window, powerMonitor)) return seen();
       for (const a of arrivals) {
         if (!a || !a.id || unseen.has(a.id)) continue;
         unseen.set(a.id, a);
+        if (unseen.size > 512) {
+          // A finished task remains on its durable row; an approval has a clock.
+          const ordinary = [...unseen].find(([, item]) => item.kind !== 'approval');
+          unseen.delete(ordinary?.[0] ?? unseen.keys().next().value);
+        }
       }
       if (!unseen.size || timer) return;
       timer = setTimeout(speak, coalesceMs);
@@ -138,11 +155,11 @@ export function createNotifier({ window, Notification, powerMonitor, coalesceMs 
   };
 }
 
-export function installNotifier({ app, window, Notification, powerMonitor, ipcMain }) {
-  if (Notification.isSupported && !Notification.isSupported()) {
+export function installNotifier({ app, window, Notification, powerMonitor, ipcMain, attention = null }) {
+  if (!attention && Notification.isSupported && !Notification.isSupported()) {
     return { add() {}, seen() {} };
   }
-  const notifier = createNotifier({ window, Notification, powerMonitor });
+  const notifier = createNotifier({ window, Notification, powerMonitor, attention });
   window.on('focus', () => notifier.seen());
   // Unlocking with Agentbox already the front app never fires 'focus' (it never
   // lost it), so without this the banner that fired while the screen was

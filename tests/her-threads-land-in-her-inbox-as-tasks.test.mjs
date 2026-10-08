@@ -341,14 +341,14 @@ describe('the wiring the card needs is really there', () => {
   const logic = read('renderer/src/agent-import-card.ts');
 
   it('reads the threads, draws them, and files them on the same press', () => {
-    expect(card).toContain('await api.agentThreads()');
+    expect(card).toContain('await api.agentThreads(threadKey)');
     // One ticked list since w-db6f5e331e: threads are lines among the rest.
     expect(logic).toContain('for (const t of d.threads ?? [])');
     expect(card).toContain('{lines.map(lineRow)}');
-    expect(card).toContain('api.importThreads({ product: slug, threads: load.ids })');
-    expect(api).toContain("zero.agentThreads()");
+    expect(card).toContain('api.importThreads({ product: slug, threads: load.ids, threadKeys: load.keys })');
+    expect(api).toContain("zero.agentThreads(threadKey)");
     expect(api).toContain("zero.importThreads(p)");
-    expect(preload).toContain("ipcRenderer.invoke('zero:agent-threads')");
+    expect(preload).toContain("ipcRenderer.invoke('zero:agent-threads', { threadKey })");
     expect(preload).toContain("ipcRenderer.invoke('zero:import-threads'");
     expect(ipc).toContain("ipcMain.handle('zero:agent-threads'");
     expect(ipc).toContain("ipcMain.handle('zero:import-threads'");
@@ -370,7 +370,8 @@ describe('the wiring the card needs is really there', () => {
   it('takes the thread objects off main rather than off the screen', () => {
     // The renderer sends ids. A row that names a conversation should name one
     // the main process read, not one a card has been holding since this morning.
-    expect(ipc).toContain('const chosen = lastThreads.filter((t) => want.has(String(t?.id ?? \'\')));');
+    expect(ipc).toContain('selectThreadKeys(lastThreads, threadKeys)');
+    expect(ipc).toContain('lastThreads.filter((t) => want.has(String(t?.id ?? \'\')))');
     expect(card).not.toMatch(/importThreads\(\{ product: slug, threads: \[\{/);
   });
 });

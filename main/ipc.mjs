@@ -44,12 +44,16 @@ import { addClaudeAccount, addCodexAccount, outsideAgentsMode, permissionMode, r
 import { ICON_KINDS, clearProjectIcon, setProjectIcon, setProjectName } from './project-identity.mjs';
 import { ClaudeUsage } from './claude-usage.mjs';
 import { usageEngine } from '../shared/usage.mjs';
+import { inboxUsage, assertLocalInboxSetting } from './local-inbox-profile.mjs';
 import { DEFAULT_ENGINE } from '../shared/engines.mjs';
 import * as agents from './agents.mjs';
 import { findAgentFolders, readAgentFiles, readFolderAgents } from './agent-files.mjs';
 import { readSessionThreads } from './agent-sessions.mjs';
 import { readCodexThreads } from './codex-threads.mjs';
 import { markImported } from '../shared/agent-import.mjs';
+import { visibleDiscoveredThreads, selectThreadKeys } from '../shared/local-threads.mjs';
+import { lifecycleConversationRows } from './lifecycle-conversations.mjs';
+import { readImportThreadInWorker } from './local-thread-scan.mjs';
 import { codexIdOf, importChoice, isCodexImportRow, isNotImportedRow } from '../shared/codex-import.mjs';
 import { checkProjectFolder } from '../shared/project-folder-check.mjs';
 import { openFreshUser } from './fresh-user.mjs';
@@ -93,7 +97,7 @@ const NO_UPDATER = {
   install: () => false,
 };
 
-export function registerIpc({ store, supervisor, config, window, analytics = NO_ANALYTICS, docGrants = null, updater = NO_UPDATER, host, team = null }) {
+export function registerIpc({ store, supervisor, config, window, analytics = NO_ANALYTICS, docGrants = null, updater = NO_UPDATER, host, team = null, threadDiscovery = null, lifecycleMonitor = null, localInbox = false }) {
   // The three Electron things, or a plain Node stand-in for them. There is no
   // default: a caller that forgets says so here rather than throwing eighty
   // lines further down on `ipcMain.handle` of undefined.
@@ -360,6 +364,9 @@ export function registerIpc({ store, supervisor, config, window, analytics = NO_
     const items = store.listItems(now);
     const running = supervisor.status();
     const engines = supervisor.engineFacts(items);
+    const outside = liveAgents();
+    const discovery = threadDiscovery ? threadDiscovery.state() : null;
+    const lifecycle = lifecycleMonitor?.state();
     // WHICH CODING AGENT THE CORNER IS ABOUT, ANSWERED ONCE, HERE.
     // `usageEngine` is the rule (shared/usage.mjs) and it is the byline's own
     // -- what is running beats what would run -- asked about the app instead of
@@ -371,7 +378,9 @@ export function registerIpc({ store, supervisor, config, window, analytics = NO_
     // spends twenty-five seconds of somebody's machine on a number nothing will
     // draw -- which is what a Codex-only workflow paid every five minutes until
     // now. The Codex side never starts anything at all (main/codex-usage.mjs).
-    const reading = usageFor === DEFAULT_ENGINE ? usage.read() : supervisor.codexUsage();
+    const usageSnapshot = inboxUsage({local: localInbox,engine: usageFor,choices: engines.choices,
+      read: ()=>usageFor === DEFAULT_ENGINE ? usage.read() : supervisor.codexUsage(),
+      peekClaude: ()=>usage.peek(),codex: ()=>supervisor.codexUsage()});
     return {
       products: store.listProducts(),
       items,
@@ -379,7 +388,19 @@ export function registerIpc({ store, supervisor, config, window, analytics = NO_
       // title-free activity of their private work. Null on a build with no
       // team cloud, which is the single-person app.
       team: team ? team.state() : null,
-      agents: liveAgents(),
+      agents: outside,
+      agentLifecycle: lifecycle ? {
+        status: lifecycle.status,
+        rows: lifecycleConversationRows(lifecycle.signals, { threads: discovery?.threads ?? [], items, agents: outside,
+          processes: lifecycle.processes ?? [], ownedSessions: Object.values(supervisor._liveSessions ?? {}),
+          ownedPids: [...(supervisor.sessions?.values() ?? [])].map(s=>s.child?.pid) }),
+      } : null,
+      localThreads: discovery ? {
+        status: discovery.status, checkedAt: discovery.checkedAt, sources: discovery.sources,
+        partial: discovery.partial, days: discovery.days, limit: discovery.limit,
+        threads: visibleDiscoveredThreads(discovery.threads, { items, agents: outside,
+          ownedSessions: Object.values(supervisor._liveSessions ?? {}).map(s => s?.sessionId) }),
+      } : null,
       approvals: approvals.listPending(config.storeRoot),
       supervisor: running,
       // WHETHER THERE ARE TWO CODING AGENTS TO CHOOSE BETWEEN, AND WHICH ONE
@@ -410,11 +431,7 @@ export function registerIpc({ store, supervisor, config, window, analytics = NO_
       // subscription it is about, so the screen can say so too. The name is
       // still only DRAWN where this Mac has two agents to tell apart -- that
       // rule is `engineWordFor`'s, in renderer/src/byline.ts.
-      usage: reading && { engine: usageFor, ...reading },
-      usageByEngine: engines.choices.map(({ id }) => {
-        const value = id === usageFor ? reading : id === DEFAULT_ENGINE ? usage.peek() : supervisor.codexUsage();
-        return value ? { engine: id, ...value } : null;
-      }).filter(Boolean),
+      ...usageSnapshot,
       // WHETHER A NEWER AGENTBOX IS ALREADY DOWNLOADED AND WAITING. It rides the
       // snapshot for the same reason `restartNeeded` above does: it becomes
       // true WHILE the app is open, hours after boot, and the screens that
@@ -443,6 +460,10 @@ export function registerIpc({ store, supervisor, config, window, analytics = NO_
         permission: Object.fromEntries([
           ['', permissionMode(supervisor.defaultSessionArgs())],
           ...store.listProducts().map((p) => [p.slug, supervisor.effectivePermission(p.slug)]),
+        ]),
+        codexPermission: Object.fromEntries([
+          ['', supervisor.effectiveCodexMode('')],
+          ...store.listProducts().map((p) => [p.slug, supervisor.effectiveCodexMode(p.slug)]),
         ]),
       },
     };
@@ -1065,8 +1086,8 @@ export function registerIpc({ store, supervisor, config, window, analytics = NO_
     try { ({ threads: codex } = readCodexThreads({})); } catch { codex = []; }
     return [...claude, ...codex].sort((a, b) => (b.when ?? 0) - (a.when ?? 0));
   };
-  ipcMain.handle('zero:agent-threads', () => {
-    const threads = readAllThreads();
+  ipcMain.handle('zero:agent-threads', async (_e, { threadKey } = {}) => {
+    const threads = threadKey ? (await readImportThreadInWorker({ threadKey })).threads : readAllThreads();
     lastThreads = threads;
     // Each one already in the inbox says so, and the card leaves it out
     // (w-db6f5e331e). The walk's folder suggestions still read all of them.
@@ -1080,19 +1101,20 @@ export function registerIpc({ store, supervisor, config, window, analytics = NO_
   // is a row, and a row is what stops it being imported twice
   // (`threadsNeedingRows`). It does NOT resume the conversation; she was offered
   // that and picked this instead.
-  ipcMain.handle('zero:import-threads', (_e, { product, threads } = {}) => {
+  ipcMain.handle('zero:import-threads', (_e, { product, threads, threadKeys } = {}) => {
     if (!product) return { ok: false, added: 0, already: 0, ids: [] };
     const want = new Set(
       (Array.isArray(threads) ? threads : [])
         .filter((id) => typeof id === 'string' && id.trim())
         .map((id) => id.trim()),
     );
-    if (!want.size) { return { ok: true, added: 0, already: 0, ids: [] }; }
+    if (!want.size && !Array.isArray(threadKeys)) { return { ok: true, added: 0, already: 0, ids: [] }; }
     // The read is taken again only if nothing has been handed out yet, which is
     // the case a test or a fresh window can reach and a person cannot.
     if (!lastThreads.length) lastThreads = readAllThreads();
     // Two kinds, two rows.
-    const chosen = lastThreads.filter((t) => want.has(String(t?.id ?? '')));
+    const chosen = Array.isArray(threadKeys) ? selectThreadKeys(lastThreads, threadKeys)
+      : lastThreads.filter((t) => want.has(String(t?.id ?? '')));
     let out = { ids: [], added: 0, already: 0 };
     try {
       // Each store method takes its own kind off the list and leaves the other.
@@ -1365,6 +1387,7 @@ export function registerIpc({ store, supervisor, config, window, analytics = NO_
 
   ipcMain.handle('zero:settings-set-project', (_e, payload) => {
     try {
+      if (localInbox) assertLocalInboxSetting('project', payload);
       setProjectSetting({ config, supervisor }, payload ?? {});
       push();
       return { ok: true, ...readSettings({ config, supervisor, store }) };
@@ -1375,6 +1398,7 @@ export function registerIpc({ store, supervisor, config, window, analytics = NO_
 
   ipcMain.handle('zero:settings-set-workspace', (_e, payload) => {
     try {
+      if (localInbox) assertLocalInboxSetting('workspace', payload);
       setWorkspaceSetting({ config, supervisor }, payload ?? {});
       push();
       return { ok: true, ...readSettings({ config, supervisor, store }) };
@@ -1823,5 +1847,8 @@ export function registerIpc({ store, supervisor, config, window, analytics = NO_
   // buttons do, rather than reaching past it into approvals.answer.
   // `push` goes with it so the updater can make the window refetch when a
   // download finishes, without holding the window itself.
-  return { answerApproval, push };
+  return { answerApproval, push, lifecycleRows: signals => lifecycleConversationRows(signals, {
+    threads: threadDiscovery?.state().threads ?? [], items: store.listItems(Date.now()), agents: liveAgents(),
+    ownedSessions: Object.values(supervisor._liveSessions ?? {}),
+  }) };
 }

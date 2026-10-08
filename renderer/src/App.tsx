@@ -1,3 +1,4 @@
+import { companionRows, freshArrivals } from './companion-model';
 import { previewFocus } from './preview-focus';
 import type {FocusControlStyle} from './focus-control';
 import {reviewLabEnabled} from './review-lab';
@@ -65,7 +66,7 @@ import { approvalReads } from './approval-card';
 import { sentLine } from './compose-says';
 import { belongsInInbox, belongsInProgress, belongsOnTheRail, byRunningOrder, clipToSentence, hiddenUntil, isProposal, maskedAncestors, notStarted, parkedByAgent, replyClearsSchedule, statusForReply, stoppable, threadMasked, threadsOwedAnAnswer, withdrawReply } from './list-rules';
 import { agentKey, agentRow, asksSomething, byRecency, listed as agentIsListed, onTheRail, railLine, reachesInbox, progressAfterReply, replyReaches, whereItRuns } from '../../shared/agents.mjs';
-import { opensATextField } from './keys';
+import { opensATextField, controlOwnsActivation } from './keys';
 import { sidebarFits, useRoomyToggle, useWindowWidth } from './room';
 import { isUrgentRow, taskToReturnTo, urgentInterruption } from './interrupt';
 import { DONE } from './done-word';
@@ -485,6 +486,7 @@ export default function App() {
   // the same reason `newProject` has one: ⌘K closes the modal stack on its
   // way out, and this card is opened FROM ⌘K.
   const [importAgents, setImportAgents] = useState(false);
+  const [discoveredThread, setDiscoveredThread] = useState<string | null>(null);
   // The project just made, handed to the composer so the task she was in the
   // middle of writing is now addressed to it.
   const [pickProject, setPickProject] = useState<string | null>(null);
@@ -1442,7 +1444,7 @@ export default function App() {
     setRun((r) => (r ? stepTo(r, 'done') : r));
   }, [run, modal, finishRun]);
 
-  const prevInboxIds = useRef<Set<string>>(new Set());
+  const prevInboxIds = useRef<Set<string> | null>(null);
   const prevAskIds = useRef<Set<string>>(new Set());
   // After resolving an item FROM INSIDE IT, advance to the next one instead of
   // dropping back to the list: processing the inbox is a flow, not a round trip
@@ -2675,6 +2677,15 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focused?.id, focused?.product]);
 
+  // Publish the inbox's own row membership; the companion never guesses it.
+  useEffect(() => {
+    if (!snap) return;
+    void window.zero?.companionRows?.(companionRows({ inbox, progress, agents: agentRows,
+      running: snap.supervisor.running, approvals: snap.approvals ?? [], engines: snap.engines ?? {},
+      discovered: snap.localThreads?.threads ?? [], lifecycle: snap.agentLifecycle?.rows ?? [] }),
+      snap.localThreads ? { ...snap.localThreads, lifecycleStatus: snap.agentLifecycle?.status } : undefined);
+  }, [snap, inbox, progress, agentRows]);
+
   /* --------------------------- arrival side-effects ----------------------- */
   // WHAT ARRIVED, not what to say about it. This page owns the definition of
   // "news" (it is the only place that knows what the inbox is), and it owns
@@ -2689,8 +2700,8 @@ export default function App() {
   useEffect(() => {
     if (!snap) return;
     const ids = new Set(inbox.map((i) => i.id));
-    const first = prevInboxIds.current.size === 0;
-    const fresh = first ? [] : inbox.filter((i) => !prevInboxIds.current.has(i.id));
+    const first = prevInboxIds.current === null;
+    const fresh = freshArrivals(prevInboxIds.current, inbox);
     prevInboxIds.current = ids;
     window.zero?.badge?.(inbox.length);
 
@@ -2942,14 +2953,17 @@ export default function App() {
   // of the point.
   useEffect(() => {
     const off = window.zero?.onOpenItem?.(({ id }) => {
-      const row = [...inbox, ...progress, ...snoozed, ...done].find((i) => i.id === id);
+      const thread = snap?.localThreads?.threads.find(t => t.key === id);
+      const hookedImport = snap?.agentLifecycle?.rows.find(t => t.id === id && t.action === 'import');
+      if (thread || hookedImport) { setDiscoveredThread(thread?.key ?? hookedImport!.id); setImportAgents(true); return; }
+      const row = [...inbox, ...progress, ...snoozed, ...done, ...agentRows].find((i) => i.id === id);
       if (!row) return;
       setSearch(null);
       setFocused(row);
       markSeen(row);
     }) ?? (() => {});
     return off;
-  }, [inbox, progress, snoozed, done, markSeen]);
+  }, [inbox, progress, snoozed, done, agentRows, markSeen, snap?.localThreads, snap?.agentLifecycle]);
 
   // THE PANEL'S CLICK.The actual agent already has a card here — its
   // conversation, its reply box and the button that brings its own window to
@@ -4307,6 +4321,7 @@ export default function App() {
       // reload, cmd-C copy); a single-letter shortcut must never fire
       // underneath one.
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (controlOwnsActivation(e.key, target)) return;
       if (modal || inInput) {
         if (e.key === 'Escape' && !inInput) setModal(null);
         return;
@@ -4954,6 +4969,7 @@ export default function App() {
           the sidebar for the single-player launch (w-1b574413db, 2026-10-04).
           `onInvite` is still handed in, for the account menu. */}
       {workspaceNavigation && <WorkspaceNavigation
+        companionIdentity
         update={announcesUpdate(snap?.update, { walking, closed: '' }) ? { installing: !!snap?.update?.installing, version: snap?.update?.newVersion, changes: snap?.update?.changes, behind: snap?.update?.behind, error: snap?.update?.error } : null}
         onUpdate={() => { void api.updateInstall(); }}
         page={settingsOpen ? 'settings' : null} onFeedback={() => setFeedbackOpen(true)} teamPage={teamOpen && !settingsOpen} hasTeam={!!snap?.team?.configured} team={snap?.team ?? null}
@@ -5515,6 +5531,7 @@ export default function App() {
                      project that overrides it. Resolved in main; the fallback
                      is the workspace entry. */
                   runningMode={snap.config?.permission?.[focused.product] ?? snap.config?.permission?.['']}
+                  runningCodexMode={snap.config?.codexPermission?.[focused.product] ?? snap.config?.codexPermission?.['']}
                   /*
                    * WHETHER THERE IS A CODING AGENT TO NAME, AND WHICH ONE THIS
                      ROW RUNS ON (w-250cd74811). Both are main's answers, off the
@@ -6092,9 +6109,10 @@ export default function App() {
        */}
       {importAgents && (
         <ImportAgents
+          threadKey={discoveredThread}
           products={snap.products}
           filter={productFilter}
-          onNewProject={() => { setImportAgents(false); setNewProject(true); }}
+          onNewProject={() => { setImportAgents(false); setDiscoveredThread(null); setNewProject(true); }}
           /*
            * A project was made on the card, around a folder that had agents in
              it (w-7fd38422b5). The sidebar redraws; the card stays open on it,
@@ -6103,10 +6121,11 @@ export default function App() {
           onProjectMade={(slug) => { rememberProject(slug); refresh(); }}
           onDone={async ({ added, already, name, inboxes, made, noun }) => {
             setImportAgents(false);
+            setDiscoveredThread(null);
             showToast(importedLine({ added, already, name, inboxes, made, noun }));
             await refresh();
           }}
-          onClose={() => setImportAgents(false)}
+          onClose={() => { setImportAgents(false); setDiscoveredThread(null); }}
         />
       )}
       {/* MAKING A PROJECT. There is no card any more: this opens the Mac's own

@@ -10,7 +10,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import Link from '@tiptap/extension-link';
-import Table from '@tiptap/extension-table';
+import { Table } from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableHeader from '@tiptap/extension-table-header';
 import TableCell from '@tiptap/extension-table-cell';
@@ -150,6 +150,10 @@ export function buildExtensions(placeholder: string, { tables = true }: { tables
   return [
     StarterKit.configure({
       heading: { levels: [1, 2, 3] },
+      // Keep our existing link/underline behavior and document shape on v3.
+      link: false,
+      underline: false,
+      trailingNode: false,
     }),
     Underline,
     UnboldHeading,

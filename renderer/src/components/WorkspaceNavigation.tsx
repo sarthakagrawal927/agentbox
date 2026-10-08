@@ -40,7 +40,8 @@ import { AccountMenu } from '../team/account-menu';
  *  deselected tab that is --text-faint at 400, exactly the word Inbox beside it;
  *  on the active one it is --text at 500. There is one rule rather than two.
  */
-export function WorkspaceNavigation({ view, collapsed, onToggle, onView, onSearch: _onSearch, onCompose: _onCompose, inboxCount = 0, scheduledCount: _scheduledCount = 0, usage, onSettings, onInstructions, page: pageIn, hasTeam = false, onTeam, teamPage = false, team = null, onInvite, onAccount, onFeedback, onSignOut, update = null, onUpdate }: {
+export function WorkspaceNavigation({ companionIdentity = false, view, collapsed, onToggle, onView, onSearch: _onSearch, onCompose: _onCompose, inboxCount = 0, scheduledCount: _scheduledCount = 0, usage, onSettings, onInstructions, page: pageIn, hasTeam = false, onTeam, teamPage = false, team = null, onInvite, onAccount, onFeedback, onSignOut, update = null, onUpdate }: {
+  companionIdentity?: boolean;
   // A NEW VERSION WAITING (SidebarUpdate.tsx). Null when there is none.
   // `version` is what its × closes, until a newer one arrives.
   update?: { installing: boolean; version?: string | null; changes?: string[]; behind?: number | null; error?: string | null } | null; onUpdate?: () => void;
@@ -80,12 +81,12 @@ export function WorkspaceNavigation({ view, collapsed, onToggle, onView, onSearc
   // tab is lit on every one of them.
   const inboxLit = !page && (['inbox', 'progress', 'snoozed', 'done', 'all'] as string[]).includes(view);
   const me = team?.signedIn ? team.me : null;
-  const teamName = team?.team?.name ?? Name;
+  const teamName = team?.team?.name ?? (companionIdentity ? 'Agent Inbox' : Name);
   // A team wears its initial. With no team the corner names the app itself, so
   // it wears the Agentbox icon rather than a letter A.
   const mark = team?.team?.name
     ? <span className="th-mark" aria-hidden="true">{teamName.slice(0, 1).toUpperCase()}</span>
-    : <span className="th-mark th-mark-app" aria-hidden="true"><AppMark size={20} /></span>;
+    : <span className="th-mark th-mark-app" aria-hidden="true">{companionIdentity ? <SidebarIcon view="inbox"/> : <AppMark size={20} />}</span>;
   // THE BOTTOM-LEFT CORNER, AND IT IS NULL WHEN THERE IS NOBODY TO PUT IN IT.
   //
   // YOUR OWN ROW IS ONE BUTTON, face, name and email, and it opens your account

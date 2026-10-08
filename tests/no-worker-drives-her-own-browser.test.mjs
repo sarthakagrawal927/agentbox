@@ -56,7 +56,9 @@ describe('the browser an agent may reach', () => {
   });
 
   it('is written down where a session will read it before it builds one', () => {
-    const law = read('CLAUDE.md');
+    // CLAUDE.md imports AGENTS.md, which is where the rule is written.
+    expect(read('CLAUDE.md')).toMatch(/^@AGENTS\.md\s*$/);
+    const law = read('AGENTS.md');
     expect(law).toContain('NO WORKER EVER DRIVES THE USER'); // the heading
     expect(law).toContain('--chrome');
   });

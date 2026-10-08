@@ -26,7 +26,7 @@ describe('the app a stranger downloads is called Powerup', () => {
     // so the app shipped under the internal name for as long as there was a
     // build. It reads the name now rather than holding one.
     const main = fs.readFileSync(path.join(repo, 'main', 'main.mjs'), 'utf8');
-    expect(main).toMatch(/title: NAME,/);
+    expect(main).toMatch(/title: LOCAL_INBOX \? 'Agent Inbox' : NAME,/);
     expect(main).not.toMatch(/title: 'Zero'/);
     for (const was of WAS) expect(main).not.toContain(`title: '${was}'`);
   });

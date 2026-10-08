@@ -229,7 +229,7 @@ describe('where it sits in the walk', () => {
     //
     // CHANGED 2026-10-05 (w-db6f5e331e): the one-list card says one line over
     // its list in the walk and in ⌘K alike, and only when there is a list.
-    expect(ia).toContain('{read && some && <p className="ia-line">{LIST.line}</p>}');
+    expect(ia).toContain('{read && some && <p className="ia-line">{threadKey ? \'Importing does not start an agent.\' : LIST.line}</p>}');
     expect(ia.split('LIST.line').length - 1).toBe(1);
     expect(ia).not.toContain('COPY.agentsRead');
   });

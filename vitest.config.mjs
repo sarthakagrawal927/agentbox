@@ -37,6 +37,8 @@ export const SUITE_EXCLUDE = [
 
 export default defineConfig({
   test: {
+    // Vitest 4 no longer reads the old VITEST_MAX_FORKS environment limit.
+    maxWorkers: 2,
     include: SUITE_INCLUDE,
     exclude: SUITE_EXCLUDE,
     // Every test file gets its own throwaway ~/.astral, so nothing in the suite

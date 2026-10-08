@@ -218,16 +218,20 @@ export function threadsNeedingRows(chosen, existingItems = []) {
  *  thread comes back as it was, with `imported: true` on the ones that are in. */
 export function markImported(threads = [], items = []) {
   const inbox = new Set();
+  const claude = new Set(), codex = new Set();
   for (const item of items ?? []) {
     const labels = item?.labels ?? [];
     const declined = labels.includes('not-imported') && item?.status === 'done';
     for (const label of labels) {
       if (typeof label !== 'string') continue;
-      if (label.startsWith('thread:')) inbox.add(label.slice(7));
-      else if (label.startsWith('codex:') && !declined) inbox.add(label.slice(6));
+      if (label.startsWith('thread:')) { inbox.add(label.slice(7)); claude.add(label.slice(7)); }
+      else if (label.startsWith('codex:') && !declined) { inbox.add(label.slice(6)); codex.add(label.slice(6)); }
     }
   }
-  return (threads ?? []).map((t) => (inbox.has(String(t?.id ?? '')) ? { ...t, imported: true } : t));
+  return (threads ?? []).map((t) => {
+    const own = t?.source === 'codex' ? codex : ['terminal', 'desktop'].includes(t?.source) ? claude : inbox;
+    return own.has(String(t?.id ?? '')) ? { ...t, imported: true } : t;
+  });
 }
 
 /**

@@ -16,7 +16,7 @@
 // Now: no heading in the table; the rule is a table row (title, project,
 // priority, and when it next runs in the time column); a repeat mark before
 // the title, and its schedule in faint words after it, read off the rule.
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { List, repeatTag, nextRunWords } from '../renderer/src/components/List.tsx';
@@ -25,6 +25,9 @@ globalThis.React = React;
 const at = (y, m, d, h, min = 0) => new Date(y, m - 1, d, h, min, 0, 0).getTime();
 // A Sunday evening, so a daily rule next runs tomorrow and a Monday rule too.
 const NOW = at(2026, 10, 4, 19, 34);
+// The rendered row must use the fixture's Sunday evening, not the wall clock.
+beforeEach(() => vi.spyOn(Date, 'now').mockReturnValue(NOW));
+afterEach(() => vi.restoreAllMocks());
 
 const rule = (over = {}) => ({
   id: 'r-abc1234567', product: 'video', productName: 'Northwind Video',

@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { fileURLToPath } from 'node:url';
 
 // THE THEME LAB IS GONE, AND THE FLAG WENT WITH IT., 2026-08-21. There used to
 // be a `define` here replacing __THEME_LAB__ with a literal so rollup could
@@ -9,5 +10,5 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   base: './',
   plugins: [react()],
-  build: { outDir: 'dist' },
+  build: { outDir: 'dist', rollupOptions: { input: { inbox: fileURLToPath(new URL('./index.html', import.meta.url)), companion: fileURLToPath(new URL('./companion.html', import.meta.url)) } } },
 });

@@ -88,6 +88,7 @@ describe('the tarball npm would publish', () => {
     expect(has((p) => p === 'main/a-stray-binary')).toBe(false);
     // Every main/ file that does ship is source.
     for (const f of manifest.files.filter((f) => f.path.startsWith('main/'))) {
+      if (f.path === 'main/companion-preload.cjs') continue;
       expect(f.path).toMatch(/\.mjs$/);
     }
   });
@@ -114,6 +115,10 @@ describe('the tarball npm would publish', () => {
     expect(has((p) => p === 'main/ipc.mjs')).toBe(true);
     expect(has((p) => p === 'LICENSE')).toBe(true);
     expect(has((p) => p === 'worker-permissions.json')).toBe(true);
+  });
+
+  it('carries the sandboxed companion preload that the main process loads', () => {
+    expect(has((p) => p === 'main/companion-preload.cjs')).toBe(true);
   });
 
   it('stays small enough that npx is not a download', () => {

@@ -179,7 +179,7 @@ describe('the half of her rule the code has to keep', () => {
     // The effect that reads her Mac is keyed on the folder AND the project. Drop
     // `folder` from that array and the card keeps one project's agents under
     // another project's name, which is her rule broken where nobody would look.
-    expect(card).toMatch(/\}, \[folder, project\]\);/);
+    expect(card).toMatch(/\}, \[folder, project, threadKey\]\);/);
   });
 
   it('makes each project pointing at the folder its agents are already in', () => {
