@@ -146,6 +146,7 @@ export const PUSH_CHANNELS = {
 // and the handler on the far side reads an object, so the key each value goes
 // under is part of the contract and belongs here beside the channel.
 export const WRAPPED_ARGS = {
+  agentThreads: ['threadKey'],
   notify: ['arrivals'],
   track: ['name'],
   instructionWrite: ['id', 'text'],
@@ -159,4 +160,4 @@ export const WRAPPED_ARGS = {
 // `onWriteHeld` is the desktop's ⌘R asking the page to write what the undo
 // window holds before it reloads (main/write-before-reload.mjs). A browser
 // reload asks nobody; the page writes on `pagehide` there instead.
-export const DESKTOP_ONLY = ['pathForFile', 'onWriteHeld'];
+export const DESKTOP_ONLY = ['pathForFile', 'onWriteHeld', 'companionRows'];

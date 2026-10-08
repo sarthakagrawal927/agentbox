@@ -11,16 +11,16 @@
 // number typed into a file of ours would look authoritative while being a
 // guess. Running an old model by mistake is the failure being avoided.
 
-export const READ_FROM = "2.1.286";
-export const READ_AT = "2026-10-01";
+export const READ_FROM = "2.1.294";
+export const READ_AT = "2026-10-08";
 
 export const CLAUDE_MODELS = [
   {"alias":"opus","id":"claude-opus-5-5","label":"Opus 5.5","defaultLevel":"medium"},
   {"alias":"claude-opus-5","id":"claude-opus-5","label":"Opus 5","defaultLevel":"high"},
   {"alias":"sonnet","id":"claude-sonnet-5-5","label":"Sonnet 5.5","defaultLevel":"medium"},
   {"alias":"claude-sonnet-5","id":"claude-sonnet-5","label":"Sonnet 5","defaultLevel":"high"},
-  {"alias":"haiku","id":"claude-haiku-4-5","label":"Haiku 4.5","defaultLevel":null},
-  {"alias":"claude-3-5-haiku","id":"claude-3-5-haiku","label":"Haiku 3.5","defaultLevel":null},
+  {"alias":"haiku","id":"claude-haiku-5-5","label":"Haiku 5.5","defaultLevel":"medium"},
+  {"alias":"claude-haiku-4-5","id":"claude-haiku-4-5","label":"Haiku 4.5","defaultLevel":null},
   {"alias":"fable","id":"claude-fable-5-1","label":"Fable 5.1","defaultLevel":"high"},
   {"alias":"claude-fable-5","id":"claude-fable-5","label":"Fable 5","defaultLevel":"high"},
 ];

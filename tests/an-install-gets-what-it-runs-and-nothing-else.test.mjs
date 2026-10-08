@@ -130,7 +130,8 @@ describe('the dependency list', () => {
   });
 
   it('says which node it was tested on rather than guessing lower', () => {
-    expect(pkg.engines?.node).toBe('>=22');
+    // The patched Electron and Vite installers require Node 22.12 or newer.
+    expect(pkg.engines?.node).toBe('>=22.12.0');
   });
 });
 

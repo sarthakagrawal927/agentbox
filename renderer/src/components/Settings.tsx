@@ -473,7 +473,7 @@ const Group = ({ id, label, warn, children }: { id?: string; label?: string; war
  * exactly the write the stepper used to make.
  */
 export function agentCountOptions(w: {
-  accounts?: unknown[]; agentsTotal?: number; capacity?: number; slotsMax?: number; sessionsAtOnce?: number;
+  accounts?: unknown[]; agentsTotal?: number; capacity?: number; slotsMax?: number; sessionsAtOnce?: number; localInbox?: boolean;
 }) {
   const accounts = Math.max(1, w.accounts?.length ?? 1);
   const auto = w.agentsTotal ?? w.capacity ?? 1;
@@ -483,7 +483,7 @@ export function agentCountOptions(w: {
   // the words a person reads since `machineNote` was written, and a menu label
   // is read exactly as a sentence is, so the rule covers it too. A bracket is
   // what the rest of this file reaches for when a label carries a second fact.
-  const options = [{ value: 'auto', label: `Automatic (${say(auto)})` }];
+  const options = w.localInbox ? [] : [{ value: 'auto', label: `Automatic (${say(auto)})` }];
   for (let n = 1; n <= (w.slotsMax ?? 12); n++) options.push({ value: String(n), label: say(n * accounts) });
   return options;
 }
@@ -1394,14 +1394,14 @@ export function Settings({ look, onSetLook, tune, onSetTune, onResetTune, keyHin
             {/* ONE SWITCH OVER EVERYTHING THAT LEAVES THE MACHINE, and there is
                 deliberately no second one and no partial mode, because the
                 privacy page (section 10) promises there is not. */}
-            <Group id="privacy" label={`What ${NAME} sends`}>
+            {w.localInbox ? <Group id="privacy" label="Local inbox"><Row label="Telemetry is off in this local build." desc="Conversations use your existing provider account. Provider allowances and token history are in ContextDaddy." /></Group> : <Group id="privacy" label={`What ${NAME} sends`}>
               <Row
                 label="Counts and crash reports"
                 desc={`That ${NAME} was opened, that a task was opened, that a reply was sent, and a report when something breaks. Never your code, your prompts, your keys or your paths, and never a title.`}
               >
                 <Switch label="Counts and crash reports" on={w.diagnostics} onChange={(v) => setWorkspace('diagnostics', v)} />
               </Row>
-            </Group>
+            </Group>}
             {/* WHERE THE USER'S FILES ARE is a fact about folders, under a
                 heading about folders. Where Claude Code lives on disk is not
                 here: it is the grey note under that agent's status, which only
@@ -1457,7 +1457,7 @@ export function Settings({ look, onSetLook, tune, onSetTune, onResetTune, keyHin
                 label="How many run at once"
                 desc={w.sessionsAtOnceFromPlan
                   ? `Your plan is ${w.sessionsAtOnceFromPlan}, so ${NAME} starts one ${twoEngines ? 'Claude Code agent ' : ''}at a time.`
-                  : w.agentsAuto
+                  : w.localInbox ? 'You choose how many inbox workers may run at once.' : w.agentsAuto
                     ? 'From this Mac’s memory, kept there as you add accounts or turn the memory check on.'
                     : `You set this. Automatic would run ${w.agentsAutoTotal ?? w.sessionsAtOnce} on this Mac.`}
               >
@@ -1484,7 +1484,7 @@ export function Settings({ look, onSetLook, tune, onSetTune, onResetTune, keyHin
                 waiting on the model costs a few hundred MB; one running tests
                 or a build costs a gigabyte or more, so the number that runs
                 out is heavy commands, not agents. Off out of the box. */}
-              {w.memoryGate && (
+              {!w.localInbox && w.memoryGate && (
                 <Row
                   label="Hold heavy work when memory is short"
                   desc={`Tests and builds take turns, urgent first. Everything else runs as normal.${twoEngines ? ' Claude Code and Codex both.' : ''}`}
@@ -1497,7 +1497,7 @@ export function Settings({ look, onSetLook, tune, onSetTune, onResetTune, keyHin
                   so it only appears once they have taken the decision back.
                   Stepping back onto Auto's own number IS Auto, so there is
                   always a way back without a second control. */}
-              {w.memoryGate?.on && !w.agentsAuto && (
+              {!w.localInbox && w.memoryGate?.on && !w.agentsAuto && (
                 <Row
                   label="Heavy commands at once"
                   desc={w.memoryGate.slots === null
@@ -1535,7 +1535,7 @@ export function Settings({ look, onSetLook, tune, onSetTune, onResetTune, keyHin
                   is the whole promise, which is the part that must not be a
                   surprise later, and it costs the row one line more than the
                   button did. */}
-              {w.leftovers && (
+              {!w.localInbox && w.leftovers && (
                 <Row
                   label="Stop programs agents leave behind"
                   desc={`Dev servers, previews and test runs an agent started and left running are stopped two hours after its run ends, or ten minutes while memory is short. Never stopped: anything you started yourself, apps installed on this Mac, and what an agent was asked to keep.${twoEngines ? ' Codex agents’ programs are not found yet.' : ''}${w.leftovers.now ? ` ${w.leftovers.now}` : ''}`}
@@ -1548,7 +1548,7 @@ export function Settings({ look, onSetLook, tune, onSetTune, onResetTune, keyHin
                   user determines whether they can take some sort of more manual
                   control or indicate that there were issues." It only ever
                   subtracts, and never below one agent. */}
-              {w.agentsAuto && (
+              {!w.localInbox && w.agentsAuto && (
                 <Row
                   label="Something felt slow"
                   desc={w.agentsNudge
@@ -1694,12 +1694,14 @@ export function Settings({ look, onSetLook, tune, onSetTune, onResetTune, keyHin
                 OFFERED. The row below appears on a project that HAS one and
                 gives her the way back to the workspace default. */}
             <Group label="How it runs">
+              {!w?.localInbox && (
               <Row
                 label="Let agents start the tasks they file here"
                 desc="A task an agent writes on this project gets a session straight away. Without this it waits in your inbox for your yes. Questions and reviews always wait for you either way."
               >
                 <Switch label="Let agents start the tasks they file here" on={current.autonomous} onChange={(v) => setProject(current.slug, 'autonomous', v)} />
               </Row>
+              )}
               {current.permission !== 'workspace' && (
                 <Row
                   label={twoEngines ? 'This project has its own Claude Code permissions' : 'This project has its own permissions'}

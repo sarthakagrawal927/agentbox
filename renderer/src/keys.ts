@@ -28,3 +28,9 @@ export const OPENS_A_TEXT_FIELD = new Set(['r', 'l', 'c', 'n', '/']);
 export function opensATextField(key: string): boolean {
   return OPENS_A_TEXT_FIELD.has(key.toLowerCase());
 }
+
+// Activation belongs to the focused native control, including an icon inside
+// it. A list row without such a control still uses the app's Enter shortcut.
+export function controlOwnsActivation(key: string, target: { closest?(selector: string): unknown } | null): boolean {
+  return (key === 'Enter' || key === ' ') && !!target?.closest?.('button, a[href], summary, [role="button"]');
+}

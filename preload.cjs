@@ -93,7 +93,7 @@ contextBridge.exposeInMainWorld('zero', {
   importAgents: (payload) => ipcRenderer.invoke('zero:import-agents', payload ?? {}),
   // The Claude Code threads she started herself in the last few days, which is
   // what she meant by her agents, and taking one as a task.
-  agentThreads: () => ipcRenderer.invoke('zero:agent-threads'),
+  agentThreads: (threadKey) => ipcRenderer.invoke('zero:agent-threads', { threadKey }),
   importThreads: (payload) => ipcRenderer.invoke('zero:import-threads', payload ?? {}),
   badge: (count) => ipcRenderer.invoke('zero:badge', count),
   // Whether this page came up from ⌘R, and which build it is running.
@@ -107,6 +107,7 @@ contextBridge.exposeInMainWorld('zero', {
   // What just arrived, not what to say about it. Whether she is looking at the
   // window is a fact only the main process holds, so the page reports and does
   // not decide (main/notify.mjs).
+  companionRows: (rows, discovery) => ipcRenderer.invoke('inbox:companion-publish', rows, discovery),
   notify: (arrivals) => ipcRenderer.invoke('zero:notify', { arrivals }),
   stopSession: (payload) => ipcRenderer.invoke('zero:stop-session', payload),
   runNow: (payload) => ipcRenderer.invoke('zero:run-now', payload),

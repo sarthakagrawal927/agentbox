@@ -38,6 +38,18 @@ const thread = (id, folder, over = {}) => ({
 const codexRows = (s, slug) => s.listAllWorkItems().filter((i) => i.product === slug && codexIdOf(i));
 
 describe('the Codex watch', () => {
+  it('does not replay histories when nothing imported needs refreshing', async () => {
+    const { s, slug, repo } = await setUp();
+    let reads = 0;
+    const readThreads = () => { reads++; return { threads: [thread('mine', repo)] }; };
+    expect(scanCodex({ store: s, readThreads, now: NOW })).toEqual({ refreshed: 0, retold: 0, threads: 0 });
+    expect(reads).toBe(0);
+    const imported = s.importCodexThreads(slug, [thread('mine', repo)], { now: NOW });
+    s.answerCodexImport(slug, imported.ids[0], 'no', { now: NOW + 1 });
+    scanCodex({ store: s, readThreads, now: NOW + 2 });
+    expect(reads).toBe(0);
+  });
+
   it('files nothing for a new conversation in a project folder', async () => {
     const { s, slug, repo } = await setUp();
     const out = scanCodex({ store: s, readThreads: () => ({ threads: [thread('new', repo)] }), now: NOW });

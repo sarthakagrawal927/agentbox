@@ -95,3 +95,15 @@ is the one app and the one source of truth. The plan is `docs/team/PLAN.md`.
 - Keep team code in its own files (`main/team/`, `renderer/src/team/`,
   `shared/team-*.mjs`, `cloud/`, `tests/team-*.test.mjs`) where that is
   natural.
+
+## Local Agent Inbox fork
+
+Read `PRODUCT.md` for this fork's scope; upstream capabilities are not all local
+product promises. Agent Inbox owns live threads/status, the segmented agent
+battery in its floating pill, notifications, linking, replies and per-request
+permissions. PerformanceDaddy retains measured workload/device diagnosis;
+ContextDaddy owns skills/plugins/MCP/context policy and consumption telemetry.
+Do not add allowance polling, machine optimization, cleanup, autonomous project
+driving, cloud teams or telemetry to the local entry point. Preserve upstream
+behavior outside that entry point. Keep PerformanceDaddy compatibility until
+replacement parity is qualified; a hook or process is never a reply channel.

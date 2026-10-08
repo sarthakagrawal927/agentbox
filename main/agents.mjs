@@ -810,8 +810,8 @@ function readState(pid) {
 // is bring the app that owns the process to the front, so this walks the parent
 // chain to the first real application and offers that by name. If it finds
 // none, it says so rather than pretending.
-export function owningApp(pid) {
-  const table = processTable();
+export async function owningApp(pid, readTable = processTable) {
+  const table = await readTable();
   let cur = table.get(pid);
   for (let hops = 0; cur && hops < 12; hops += 1) {
     const m = cur.command.match(/^(\/(?:Applications|System\/Applications)\/[^/]*?\.app)\//);
@@ -821,8 +821,8 @@ export function owningApp(pid) {
   return null;
 }
 
-export function reveal(pid) {
-  const app = owningApp(pid);
+export async function reveal(pid) {
+  const app = await owningApp(pid);
   if (!app) return { ok: false, reason: `${Name} cannot tell which window it is running in.` };
   return new Promise((resolve) => {
     execFile('/usr/bin/open', ['-a', app.path], (err) => {

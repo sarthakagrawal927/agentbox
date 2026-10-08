@@ -466,6 +466,7 @@ export function readSettings({ config, supervisor, store }) {
   return {
     archivedProjects,
     workspace: {
+      localInbox: !!config.localInbox,
       agentsRunning: !supervisor.paused,
       sessionsAtOnce: config.maxConcurrentSessions,
       // AUTOMATIC, AND WHAT IT WORKS OUT TO (w-e5225b62ba). `agentsAuto` is who

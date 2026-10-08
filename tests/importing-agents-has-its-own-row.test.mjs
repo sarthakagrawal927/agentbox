@@ -106,7 +106,7 @@ describe('it is the walk\'s import, not a second one', () => {
     // agent files and her own threads, they land in one inbox, and `file` is
     // what puts them there. The channel is still the walk's.
     expect(card).toContain('api.importAgents({ product: slug, agents: load.names })');
-    expect(card).toContain('api.importThreads({ product: slug, threads: load.ids })');
+    expect(card).toContain('api.importThreads({ product: slug, threads: load.ids, threadKeys: load.keys })');
     expect(card).toContain('await file(slug, load);');
     expect(card).toContain('await file(slug, f.load);');
   });
@@ -114,7 +114,7 @@ describe('it is the walk\'s import, not a second one', () => {
   it('re-reads the Mac when the project changes, because the project scope IS its folder', () => {
     const effect = card.slice(card.indexOf('READ AGAIN WHENEVER THE PROJECT CHANGES'));
     expect(effect).toContain('api.agentFiles({ folder, product: project })');
-    expect(effect.slice(0, effect.indexOf('const some'))).toContain('}, [folder, project]);');
+    expect(effect.slice(0, effect.indexOf('const some'))).toContain('}, [folder, project, threadKey]);');
   });
 });
 

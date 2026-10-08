@@ -31,6 +31,7 @@
   "files": [
     "bin/",
     "main/**/*.mjs",
+    "main/companion-preload.cjs",
     "shared/**/*.mjs",
     "shared/**/*.mts",
     "shared/**/*.json",
@@ -49,7 +50,7 @@
   ],
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "build": "node scripts/prepare-terminal.mjs && node scripts/read-claude-commands.mjs && node scripts/read-claude-models.mjs && vite build renderer",
+    "build": "node scripts/prepare-terminal.mjs && node scripts/build-lifecycle-helper.mjs && node scripts/read-claude-commands.mjs && node scripts/read-claude-models.mjs && vite build renderer",
     "start": "npm run build && node scripts/brand-electron.mjs && electron .",
     "test": "vitest run",
     "typecheck": "node node_modules/typescript/bin/tsc --noEmit -p renderer/tsconfig.json",
@@ -73,25 +74,25 @@
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
     "@fontsource-variable/source-sans-3": "^5.3.0",
-    "@tiptap/core": "^2.27.2",
-    "@tiptap/extension-link": "^2.27.2",
-    "@tiptap/extension-placeholder": "^2.27.2",
-    "@tiptap/extension-table": "^2.27.2",
-    "@tiptap/extension-table-cell": "^2.27.2",
-    "@tiptap/extension-table-header": "^2.27.2",
-    "@tiptap/extension-table-row": "^2.27.2",
-    "@tiptap/extension-task-item": "^2.27.2",
-    "@tiptap/extension-task-list": "^2.27.2",
-    "@tiptap/pm": "^2.27.2",
-    "@tiptap/react": "^2.27.2",
-    "@tiptap/starter-kit": "^2.27.2",
+    "@tiptap/core": "^3.31.4",
+    "@tiptap/extension-link": "^3.31.4",
+    "@tiptap/extension-placeholder": "^3.31.4",
+    "@tiptap/extension-table": "^3.31.4",
+    "@tiptap/extension-table-cell": "^3.31.4",
+    "@tiptap/extension-table-header": "^3.31.4",
+    "@tiptap/extension-table-row": "^3.31.4",
+    "@tiptap/extension-task-item": "^3.31.4",
+    "@tiptap/extension-task-list": "^3.31.4",
+    "@tiptap/pm": "^3.31.4",
+    "@tiptap/react": "^3.31.4",
+    "@tiptap/starter-kit": "^3.31.4",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.1",
+    "@vitejs/plugin-react": "^5.2.0",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/addon-serialize": "^0.14.0",
     "@xterm/xterm": "^6.0.0",
-    "electron": "^43.0.0",
+    "electron": "^43.7.9",
     "electron-builder": "^26.15.3",
     "pdfjs-dist": "^6.3.289",
     "react": "^18.3.1",
@@ -99,11 +100,11 @@
     "react-markdown": "^9.0.1",
     "remark-gfm": "^4.0.0",
     "typescript": "^5.5.4",
-    "vite": "^5.4.0",
-    "vitest": "^2.0.5"
+    "vite": "^7.3.7",
+    "vitest": "^4.1.11"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "@supabase/supabase-js": "^2.117.2",
     "electron-updater": "^6.8.9",
     "node-pty": "^1.1.0",
@@ -136,6 +137,12 @@
       "scripts/approval-server.sh",
       "scripts/memory-gate-hook.sh",
       "node_modules/node-pty/**"
+    ],
+    "extraResources": [
+      {
+        "from": "native/bin/AgentInboxLifecycle",
+        "to": "native/AgentInboxLifecycle"
+      }
     ],
     "mac": {
       "extendInfo": {
@@ -193,6 +200,11 @@
     ]
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12.0"
+  },
+  "overrides": {
+    "@electron/get": {
+      "global-agent": "^4.1.3"
+    }
   }
 }

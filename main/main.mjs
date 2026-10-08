@@ -31,7 +31,13 @@ import { installCrashReports, reportFromRenderer, pending as pendingCrashes, set
 import { createAnalytics, createDailyCount } from './analytics.mjs';
 import { createUpdater } from './updater.mjs';
 import { createSourceUpdater } from './source-updater.mjs';
-import { installNotifier } from './notify.mjs';
+import { localInboxUpdater, localInboxConfig } from './local-inbox-profile.mjs';
+import { installNotifier, isAtInbox } from './notify.mjs';
+import { createCompanion } from './companion.mjs';
+import { createPlacementStore } from './companion-placement.mjs';
+import { createThreadDiscovery } from './local-thread-discovery.mjs';
+import { createLifecycleMonitor } from './lifecycle-monitor.mjs';
+import { installInboxRecovery } from './inbox-recovery.mjs';
 import { DOC_SCHEMES, DocGrants, docPath } from './doc-scheme.mjs';
 import { quietTheFramesScrollbars } from './frame-scrollbars.mjs';
 import { IMG_SCHEMES, imgPath, mediaResponse, mediaType, servable } from './img-scheme.mjs';
@@ -116,6 +122,7 @@ const appDir = path.join(__dirname, '..');
 // dashes only, and never a space: "agentbox team" reads as a side build, and
 // side builds share the real data folder on purpose.
 const PROFILE = String(process.env.AGENTBOX_PROFILE ?? '').trim().replace(/[^a-z0-9-]/gi, '');
+const LOCAL_INBOX = process.env.AGENT_INBOX_LOCAL_BUILD === '1';
 if (PROFILE) app.setName(`${NAME}-${PROFILE}`);
 if (dataFolderName(app.getName()) !== app.getName()) app.setName(dataFolderName(app.getName()));
 
@@ -151,7 +158,7 @@ if (isNewUserBuild(app.getName()) && !runningAsAFreshUser()) {
 // have found nothing and handed them an empty Powerup. Whoever renames this app
 // a third time adds one entry here and nothing else.
 // A profile never falls back to an older folder: an older folder is hers.
-if (!PROFILE) try {
+if (!PROFILE && !LOCAL_INBOX) try {
   const named = path.join(app.getPath('appData'), app.getName());
   if (!fs.existsSync(named)) {
     // THESE ARE HISTORY AND NOT COPY. They are the folder names this app has
@@ -177,7 +184,7 @@ if (!PROFILE) try {
 // because a throwaway home moves that folder and does not move the checkout.
 // `configDir` in main/config.mjs is the whole rule and says what she saw when
 // it was missing.
-const dataDir = configDir({ appDir, userData: app.getPath('userData'), packaged: app.isPackaged });
+const dataDir = LOCAL_INBOX ? app.getPath('userData') : configDir({ appDir, userData: app.getPath('userData'), packaged: app.isPackaged });
 
 // AND WHERE WHAT SHE TYPES LIVES, WHICH IS NEVER THE CHECKOUT (w-3dc46f3a67,
 // 2026-09-21). Her standing instructions and her writing rules used to be
@@ -272,7 +279,7 @@ function reloadRenderer() {
 }
 
 async function createWindow() {
-  const config = loadConfig(dataDir);
+  const config = LOCAL_INBOX ? localInboxConfig(loadConfig(dataDir)) : loadConfig(dataDir);
   // The store modules read the app's own home variable at call time; setting it
   // here points auth session files, sync, and every store path at its root.
   // Written under every name this app has had, because a store server or a
@@ -321,7 +328,7 @@ async function createWindow() {
   // where it is given a way out, and where the reports from the launch that
   // died are finally sent, because a report is written while the process is
   // dying and delivery cannot be synchronous.
-  const analytics = createAnalytics({ config, version: app.getVersion(), dir: crashDir });
+  const analytics = createAnalytics({ config: LOCAL_INBOX ? {...config, diagnostics:false} : config, version: app.getVersion(), dir: crashDir });
   // "Used today", once a day, at launch and whenever the window comes forward.
   const usedToday = createDailyCount((name) => analytics.track(name));
   // The seam is filled whenever there is somewhere to send to. Whether anything
@@ -369,7 +376,7 @@ async function createWindow() {
   // every launch put a "Agentbox Safe Storage" password prompt in front of the
   // single-person app, which has no sign-in to keep
   // (tests/the-installed-app-is-the-single-person-app.test.mjs).
-  const cloudConfig = loadCloudConfig(appDir, { packaged: app.isPackaged });
+  const cloudConfig = LOCAL_INBOX ? null : loadCloudConfig(appDir, { packaged: app.isPackaged });
   const team = cloudConfig ? createTeamService({
     session: supabaseSession({
       cloudConfig,
@@ -393,9 +400,8 @@ async function createWindow() {
     team.start().then(() => supervisor.wake?.()).catch((err) => console.warn(`team: ${err.message}`));
     app.on('before-quit', () => team.stop());
   }
-  // HER CODEX CONVERSATIONS ASK TO COME IN. Once a minute: a new one in a
-  // folder a project points at gets a row asking yes or no, and the ones she
-  // said yes to follow Codex's latest answer.
+  // Keep explicitly imported Codex conversations current. Discovery is a
+  // separate metadata-only scan; new histories never create rows here.
   const codexWatch = startCodexWatch({ store });
   app.on('before-quit', () => codexWatch.stop());
   // Whatever is still queued goes with the app rather than dying in memory.
@@ -592,7 +598,7 @@ async function createWindow() {
     height: 900,
     minWidth: 980,
     minHeight: 600,
-    title: NAME,
+    title: LOCAL_INBOX ? 'Agent Inbox' : NAME,
     backgroundColor: '#1a1a1c',
     titleBarStyle: 'hiddenInset',
     webPreferences: {
@@ -654,7 +660,7 @@ async function createWindow() {
   // feed (main/source-updater.mjs), because that is how teammates run the team
   // build and their updates are pushes to main, not releases.
   let pushUpdate = () => {};
-  const updater = app.isPackaged ? createUpdater({
+  const updater = LOCAL_INBOX ? localInboxUpdater() : app.isPackaged ? createUpdater({
     app,
     onChanged: () => pushUpdate(),
   }) : createSourceUpdater({
@@ -665,16 +671,22 @@ async function createWindow() {
 
   // The desktop door. `main/serve.mjs` is the other one and hands over plain
   // Node stand-ins for these three; everything else about the call is the same.
+  const threadDiscovery = createThreadDiscovery({ onChange: () => pushUpdate() });
+  const lifecycleMonitor = createLifecycleMonitor({
+    binary: app.isPackaged ? path.join(process.resourcesPath, 'native', 'AgentInboxLifecycle') : path.join(appDir, 'native', 'bin', 'AgentInboxLifecycle'),
+    onChange: () => pushUpdate(),
+  });
   const ipc = registerIpc({
     store, supervisor, config, window, analytics, docGrants, updater,
     host: { ipcMain, app, dialog },
-    team,
+    team, threadDiscovery, lifecycleMonitor, localInbox: LOCAL_INBOX,
   });
   pushUpdate = ipc.push;
-  // The Agents menu's Allow/Deny, bound to the real door now that there is one.
-  // See the `installMenu` call above for what writing the file instead did to a
-  // Codex card.
+  // Bind the menu's approval door before starting background services.
   answerApproval = ipc.answerApproval;
+  threadDiscovery.start();
+  app.on('before-quit', () => threadDiscovery.stop());
+  app.on('before-quit', () => lifecycleMonitor.stop());
   updater.start();
   // A task the app just shipped moved main: look now rather than in half an
   // hour, so the restart is offered while she still remembers the task.
@@ -855,7 +867,33 @@ async function createWindow() {
   // a locked screen all read the same from in there). The renderer says what
   // arrived; main/notify.mjs decides. tell me when I am in another app, never
   // while I am in Agentbox.
-  installNotifier({ app, window, Notification, powerMonitor, ipcMain });
+  const companion = createCompanion({ BrowserWindow, screen: electronScreen, ipcMain, Menu, appDir,
+    placementStore: createPlacementStore(path.join(app.getPath('userData'), 'companion-placement.json')),
+    focused: () => isAtInbox(window, powerMonitor),
+    open: id => {
+      if (window.isDestroyed()) return;
+      if (window.isMinimized()) window.restore();
+      window.show(); window.focus();
+      if (id) window.webContents.send('zero:open-item', { id });
+    },
+  });
+  ipcMain.handle('inbox:companion-publish', (event, rows, discovery) => {
+    if (event.sender !== window.webContents || event.senderFrame?.parent) throw Error('Only the inbox can publish companion rows.');
+    companion.publish(rows, discovery);
+  });
+  let quitting = false;
+  app.on('before-quit', () => { quitting = true; companion.dispose(); });
+  window.on('close', event => { if (!quitting) { event.preventDefault(); window.hide(); } });
+  app.on('activate', () => { if (!window.isDestroyed()) { window.show(); window.focus(); } });
+  const notifier = installNotifier({ app, window, Notification, powerMonitor, ipcMain, attention: arrivals => companion.notify(arrivals) });
+  lifecycleMonitor.onAttention(signal => {
+    const rows = ipc.lifecycleRows([signal]);
+    notifier.add(rows.map(row => ({ id: row.id, title: row.title, productName: row.product, kind: 'item' })));
+  });
+  await companion.load();
+  lifecycleMonitor.start();
+  const inboxRecovery = installInboxRecovery({ powerMonitor, lifecycle: lifecycleMonitor, discovery: threadDiscovery, notifier, companion });
+  app.on('before-quit', () => inboxRecovery.stop());
   // Asked for once by the renderer as it mounts, rather than pushed on
   // did-finish-load, which races the first effects and would drop the very
   // message it exists to deliver.
@@ -1010,6 +1048,7 @@ if (!app.requestSingleInstanceLock()) {
   app.on('second-instance', () => {
     if (window) {
       if (window.isMinimized()) window.restore();
+      window.show();
       window.focus();
     }
   });

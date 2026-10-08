@@ -613,6 +613,14 @@ export interface Snapshot {
   // cloud, which is the single-person app.
   team?: TeamState | null;
   agents?: AgentSession[];
+  agentLifecycle?: { status: 'connecting' | 'ready' | 'unavailable'; rows: import('./companion-model').CompanionRow[] } | null;
+  localThreads?: {
+    status: 'scanning' | 'ready' | 'unavailable'; checkedAt: number | null;
+    threads: import('../../shared/local-threads.mjs').DiscoveredThread[];
+    sources: { provider: string; status: 'available' | 'missing' | 'unavailable'; partial?: boolean }[];
+    partial: boolean; days: number; limit: number;
+    lifecycleStatus?: 'connecting' | 'ready' | 'unavailable';
+  } | null;
   approvals?: Approval[];
   supervisor: SupervisorStatus;
   // Main-process files written since this process read them: code that exists
@@ -667,6 +675,7 @@ export interface Snapshot {
     // the renderer is a second answer, and the whole point of printing it is
     // that it is the true one.
     permission?: Record<string, PermissionMode>;
+    codexPermission?: Record<string, CodexModeId>;
   };
 }
 
@@ -800,6 +809,7 @@ export interface WorkspaceSettings {
    *  which is what the page shows; the per-account number is arithmetic nobody
    *  is asked to do. w-e5225b62ba. */
   agentsAuto?: boolean;
+  localInbox?: boolean;
   agentsTotal?: number;
   agentsAutoTotal?: number;
   agentsNudge?: number;
@@ -1102,6 +1112,7 @@ declare global {
       // What arrived. The page does not choose the words and does not choose
       // whether to speak at all; only the main process can see whether she is
       // looking at the window (main/notify.mjs).
+      companionRows?(rows: import('./companion-model').CompanionRow[], discovery?: Snapshot['localThreads']): Promise<void>;
       notify?(arrivals: Array<{
         id: string;
         title: string;

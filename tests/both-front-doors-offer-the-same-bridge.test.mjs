@@ -31,7 +31,8 @@ const preload = fs.readFileSync(path.join(repoRoot, 'preload.cjs'), 'utf8');
 // `onSomething` subscriptions that listen on one.
 const exposedRequests = Object.fromEntries(
   [...preload.matchAll(/^\s{2}(\w+):\s*\([^)]*\)\s*=>\s*ipcRenderer\.invoke\('([^']+)'/gm)]
-    .map((m) => [m[1], m[2]]),
+    .map((m) => [m[1], m[2]])
+    .filter(([name]) => !DESKTOP_ONLY.includes(name)),
 );
 const exposedPushes = Object.fromEntries(
   [...preload.matchAll(/^\s{2}(\w+):\s*\([^)]*\)\s*=>\s*\{(?:(?!ipcRenderer\.invoke)[\s\S])*?ipcRenderer\.on\('([^']+)'/gm)]

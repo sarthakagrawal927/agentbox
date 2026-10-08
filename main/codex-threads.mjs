@@ -26,6 +26,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { StringDecoder } from 'node:string_decoder';
 import { RECENT_DAYS, isScratchFolder, shortFolder, threadTitle } from './agent-sessions.mjs';
 import { WAS_SLUGS, nameSlug } from '../shared/product-name.mjs';
 
@@ -163,18 +164,40 @@ const partsOf = (payload) => (Array.isArray(payload?.content) ? payload.content 
  *  `message` with a `role` and a `content` array of `input_text`, `input_image`
  *  and `output_text` parts. Current Codex threads are paginated, and a build
  *  that read only legacy showed "Codex has not answered yet." on every row. */
-export function readRollout(file) {
-  let text = '';
+function rolloutLines(file, metadataOnly) {
+  // Explicit import keeps the original single bounded read. Chunking is only
+  // for discovery, where early return avoids reading conversation bodies.
+  if (metadataOnly) return rolloutHeadLines(file);
+  const fd = fs.openSync(file, 'r');
   try {
-    const fd = fs.openSync(file, 'r');
-    try {
-      const size = fs.fstatSync(fd).size;
-      const buf = Buffer.alloc(Math.min(size, MAX_BYTES));
-      fs.readSync(fd, buf, 0, buf.length, 0);
-      text = buf.toString('utf8');
-    } finally { fs.closeSync(fd); }
-  } catch { return null; }
-  const lines = text.split('\n');
+    const buf = Buffer.alloc(Math.min(fs.fstatSync(fd).size, MAX_BYTES));
+    fs.readSync(fd, buf, 0, buf.length, 0);
+    return buf.toString('utf8').split('\n');
+  } finally { fs.closeSync(fd); }
+}
+function* rolloutHeadLines(file) {
+  const fd = fs.openSync(file, 'r');
+  const decoder = new StringDecoder('utf8');
+  const chunk = Buffer.alloc(64 * 1024);
+  let pending = '', offset = 0;
+  try {
+    const budget = Math.min(fs.fstatSync(fd).size, MAX_BYTES);
+    while (offset < budget) {
+      const count = fs.readSync(fd, chunk, 0, Math.min(chunk.length, budget - offset), offset);
+      if (!count) break;
+      offset += count; pending += decoder.write(chunk.subarray(0, count));
+      let end;
+      while ((end = pending.indexOf('\n')) >= 0) {
+        const line = pending.slice(0, end); pending = pending.slice(end + 1);
+        yield line;
+      }
+    }
+    pending += decoder.end();
+    if (pending) yield pending;
+  } finally { fs.closeSync(fd); }
+}
+
+export function readRollout(file, { metadataOnly = false, namedIds = null } = {}) {
   let meta = null;
   let prompt = '';
   let last = '';
@@ -184,7 +207,7 @@ export function readRollout(file) {
   // Paginated mode writes the same turn twice when an event_msg is also
   // present, so a turn is counted once whichever line says it.
   let sawEventTurns = false;
-  for (const line of lines) {
+  try { for (const line of rolloutLines(file, metadataOnly)) {
     if (!line.trim()) continue;
     let j;
     try { j = JSON.parse(line); } catch { continue; }
@@ -203,6 +226,9 @@ export function readRollout(file) {
           : typeof p.thread_source === 'string' ? p.thread_source : (typeof p.source === 'string' ? 'user' : 'other'),
         startedAt: Number.isFinite(startedAt) ? startedAt : 0,
       };
+      // Discovery needs identity and a title, not an agent's whole history.
+      // Named threads and non-user runs have their answer in this first line.
+      if (metadataOnly && (meta.threadSource !== 'user' || namedIds?.has(meta.id))) break;
       continue;
     }
     const at = Date.parse(j.timestamp ?? '');
@@ -212,6 +238,7 @@ export function readRollout(file) {
       if (p.type === 'user_message') {
         const said = cleanPrompt(p.message);
         if (!prompt && said && !isInjected(said)) prompt = said;
+        if (metadataOnly && prompt) break;
         turns += 1;
         sawEventTurns = true;
       } else if (p.type === 'agent_message') {
@@ -230,12 +257,13 @@ export function readRollout(file) {
         .filter(Boolean);
       if (!hers.length) continue; // a turn made of nothing but Codex's own preamble
       if (!prompt) prompt = hers.join('\n\n').trim();
+      if (metadataOnly && prompt) break;
       if (!sawEventTurns) turns += 1;
     } else if (p.role === 'assistant') {
       const said = cleanAnswer(partsOf(p).filter((c) => c.type === 'output_text').map((c) => c.text ?? '').join('\n'));
       if (said) last = said;
     }
-  }
+  } } catch { return null; }
   if (!meta || !meta.id) return null;
   let mtime = 0;
   try { mtime = fs.statSync(file).mtimeMs; } catch { mtime = 0; }
@@ -253,13 +281,14 @@ export const isLive = (mtime, now = Date.now()) => Number(mtime) > 0 && now - Nu
  * THE USER'S CONVERSATIONS, newest first, in the shape the import card and the
  *  import row both read. One entry per thread a person typed into, in a real folder,
  *  touched in the last `days` days. */
-export function readCodexThreads({ home = os.homedir(), codexDir = codexHome(home), days = CODEX_RECENT_DAYS, now = Date.now() } = {}) {
+export function readCodexThreads({ home = os.homedir(), codexDir = codexHome(home), days = CODEX_RECENT_DAYS, now = Date.now(), metadataOnly = false } = {}) {
   const index = readCodexIndex(codexDir);
+  const namedIds = new Set([...index].filter(([, row]) => row.name).map(([id]) => id));
   const cutoff = now - Math.max(0, Number(days) || 0) * 86400 * 1000;
   const out = [];
   const skipped = { notHers: 0, scratch: 0, old: 0, empty: 0, unreadable: 0 };
   for (const file of listRolloutFiles(codexDir, { days, since: cutoff })) {
-    const r = readRollout(file);
+    const r = readRollout(file, { metadataOnly, namedIds });
     if (!r) { skipped.unreadable += 1; continue; }
     if (r.threadSource !== 'user') { skipped.notHers += 1; continue; }
     if (!r.cwd || isScratchFolder(r.cwd, home)) { skipped.scratch += 1; continue; }

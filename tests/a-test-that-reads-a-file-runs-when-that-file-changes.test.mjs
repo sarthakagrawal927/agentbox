@@ -74,9 +74,12 @@ describe('the check an agent makes before it reports', () => {
     expect(read('scripts', 'test-what-changed.mjs')).toMatch(/testsThatRead\(/);
   });
 
-  it('is the command CLAUDE.md tells an agent to run', () => {
-    const rules = read('CLAUDE.md');
-    expect(rules).toMatch(/npm run test:changed/);
+  it('is the command the agent rules tell an agent to run', () => {
+    // CLAUDE.md only imports AGENTS.md since the rules were unified, so the
+    // rule itself lives in AGENTS.md.
+    expect(read('CLAUDE.md')).toMatch(/^@AGENTS\.md\s*$/);
+    const rules = read('AGENTS.md');
+    expect(rules).toMatch(/`test:changed` script/);
     // And no longer the bare one, which skips a test that reads a file.
     expect(rules).not.toMatch(/vitest related --run/);
   });

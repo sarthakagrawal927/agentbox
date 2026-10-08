@@ -295,7 +295,7 @@ describe('the store, end to end', () => {
     const { s, slug, zero } = await store();
     const t = thread('t1', zero);
     const first = scanCodex({ store: s, readThreads: () => ({ threads: [t] }), now: NOW });
-    expect(first).toEqual({ refreshed: 0, retold: 0, threads: 1 });
+    expect(first).toEqual({ refreshed: 0, retold: 0, threads: 0 });
     expect(rows(s, slug)).toEqual([]);
     s.importCodexThreads(slug, [t], { now: NOW + 1000 });
     const second = scanCodex({ store: s, readThreads: () => ({ threads: [{ ...t, last: 'Done.' }] }), now: NOW + 2000 });

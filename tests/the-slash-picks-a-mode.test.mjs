@@ -514,7 +514,7 @@ describe('the way back', () => {
     expect(focus).toContain("back to this project's setting");
     // The clear toast still names what the message will run as now; on a Codex
     // row that is Codex's default rather than Claude Code's.
-    expect(focus).toContain("statusOf(claudeCode ? (runningMode ?? 'auto') : CODEX_DEFAULT_MODE)");
+    expect(focus).toContain("statusOf(claudeCode ? (runningMode ?? 'auto') : (runningCodexMode ?? CODEX_DEFAULT_MODE))");
   });
 
   /*

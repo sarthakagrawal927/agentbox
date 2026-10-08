@@ -57,4 +57,4 @@ jobs:
       # green run against a tree nobody has.
       - run: npm ci
 
-      - run: npx vitest run --reporter=basic
+      - run: npx vitest run --reporter=default

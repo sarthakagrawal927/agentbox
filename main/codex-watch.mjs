@@ -11,10 +11,16 @@
 // harnesses, it should only import on command, not continuously". Importing is
 // now the walk's last card and ⌘K import, for Claude Code and Codex alike.
 import { readCodexThreads } from './codex-threads.mjs';
+import { isCodexImportRow, isCodexMirrorRow } from '../shared/codex-import.mjs';
 
 export const CODEX_POLL_MS = 60_000;
 
 export function scanCodex({ store, readThreads = readCodexThreads, now = Date.now() } = {}) {
+  // Discovery reads metadata separately. Full transcripts serve only rows the
+  // user imported (or existing import asks); skip the replay when none exist.
+  if (typeof store?.listAllWorkItems === 'function' && !store.listAllWorkItems(now).some(
+    item => isCodexImportRow(item) || (isCodexMirrorRow(item) && item.status !== 'done'),
+  )) return { refreshed: 0, retold: 0, threads: 0 };
   let threads = [];
   try { ({ threads } = readThreads({ now })); } catch { return { refreshed: 0, retold: 0, threads: 0 }; }
   const refreshed = store.refreshCodexMirrors(threads, { now });

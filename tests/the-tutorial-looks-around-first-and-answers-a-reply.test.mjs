@@ -22,7 +22,7 @@
 // One describe per change. Everything here is behaviour, except where the
 // wording IS the behaviour (what the reply card tells her to do).
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -177,6 +177,9 @@ describe('4. a reply on her first thread is answered', () => {
   // answered once the supervisor has marked it delivered, and in the practice
   // project no session ever runs to mark it.
   it('answers it in the store, settled, so it comes back to Needs you rather than sitting in In progress', async () => {
+    // The ledger orders by milliseconds. Separate the reply and result in the
+    // fixture instead of depending on filesystem latency to advance the clock.
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(1_800_000_000_000);
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'reply-answered-'));
     const home = process.env.ASTRAL_HOME;
     process.env.ASTRAL_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'reply-answered-home-'));
@@ -191,12 +194,14 @@ describe('4. a reply on her first thread is answered', () => {
       const before = store.readItem(made.slug, item.id);
       expect(replyWritten(before)).toBe(true);
       expect(answerSettled(before)).toBe(false);
+      clock.mockReturnValue(1_800_000_000_001);
       store.finishFirstRunTask(made.slug, item.id, 1);
       const after = store.readItem(made.slug, item.id);
       expect(after.result).toBe(PRACTICE_REPLY_ANSWER);
       expect(replyAnswered(after)).toBe(true);
       expect(answerSettled(after)).toBe(true);
     } finally {
+      clock.mockRestore();
       fs.rmSync(dir, { recursive: true, force: true });
       if (home === undefined) delete process.env.ASTRAL_HOME; else process.env.ASTRAL_HOME = home;
     }

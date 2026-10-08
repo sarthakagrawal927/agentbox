@@ -30,6 +30,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
+import { selectThreadKeys, threadKey as localThreadKey } from '../../../shared/local-threads.mjs';
 import { type AgentFile } from '../onboarding';
 import {
   CARD, LIST, SECTION, canBring, destinations, folderOfProject, countKinds, importLines, nameOfProject,
@@ -90,10 +91,11 @@ export interface WalkMode {
   folders: AgentFolder[] | null;
 }
 
-export function ImportAgents({ products, filter, walk, onDone, onNewProject, onProjectMade, onClose }: {
+export function ImportAgents({ products, filter, walk, threadKey, onDone, onNewProject, onProjectMade, onClose }: {
   products: Project[];
   /** The project the inbox is filtered to, if any. */
   filter: string | null;
+  threadKey?: string | null;
   /** Set only when this card IS the last screen of the first run. See WalkMode. */
   walk?: WalkMode;
   /** What was filed, so the caller can say it out loud and redraw the inbox. */
@@ -182,6 +184,7 @@ export function ImportAgents({ products, filter, walk, onDone, onNewProject, onP
   // last screen of a setup.
   const handed = walk?.folders;
   useEffect(() => {
+    if (threadKey) { setOthers([]); return; }
     if (walk) { setOthers(handed ?? null); return; }
     let live = true;
     (async () => {
@@ -189,7 +192,7 @@ export function ImportAgents({ products, filter, walk, onDone, onNewProject, onP
       if (live) setOthers(f);
     })();
     return () => { live = false; };
-  }, [walk, handed]);
+  }, [walk, handed, threadKey]);
 
   // THE THREADS ARE READ HERE EVEN INSIDE THE WALK, unlike the folders above.
   // The walk hands its folders in because it scanned for them a screen early to
@@ -199,17 +202,18 @@ export function ImportAgents({ products, filter, walk, onDone, onNewProject, onP
   useEffect(() => {
     let live = true;
     (async () => {
-      const t = await api.agentThreads();
+      const t = await api.agentThreads(threadKey);
       if (live) setThreads(t);
     })();
     return () => { live = false; };
-  }, []);
+  }, [threadKey]);
 
   // READ AGAIN WHENEVER THE PROJECT CHANGES, because the project side IS the
   // project's folder: `<repo>/.claude/agents`. A card that kept the first
   // project's list under a second project's name would be lying in the half of
   // itself that is hardest to check.
   useEffect(() => {
+    if (threadKey) { setFound({user:[],project:[]}); return; }
     let live = true;
     setFound(null);
     (async () => {
@@ -218,13 +222,14 @@ export function ImportAgents({ products, filter, walk, onDone, onNewProject, onP
       setFound({ user: r.user, project: r.project });
     })();
     return () => { live = false; };
-  }, [folder, project]);
+  }, [folder, project, threadKey]);
 
   // WHAT IS ALREADY IN IS NOT OFFERED AGAIN (w-db6f5e331e). The main process
   // marks each conversation that already has a row; offering those read as
   // "Add all five" over five rows already in the inbox, and added nothing.
-  const offered = useMemo(() => (threads ?? []).filter((t) => !t.imported), [threads]);
-  const alreadyIn = (threads?.length ?? 0) - offered.length;
+  const considered = useMemo(() => threadKey ? selectThreadKeys(threads ?? [], [threadKey]) : threads ?? [], [threads, threadKey]);
+  const offered = useMemo(() => considered.filter((t) => !t.imported), [considered]);
+  const alreadyIn = considered.length - offered.length;
   const dests = useMemo(
     () => destinations({ found, folders: others ?? [], products: all, project, threads: offered }),
     [found, others, all, project, offered],
@@ -262,6 +267,11 @@ export function ImportAgents({ products, filter, walk, onDone, onNewProject, onP
     if (looking) return;
     setLooking(true);
     try {
+      if (threadKey) {
+        setThreads(await api.agentThreads(threadKey));
+        setFound({user:[],project:[]}); setOthers([]);
+        return;
+      }
       // The conversations too (w-db6f5e331e): on a Mac with only Codex they
       // are the whole of what this card can offer, and a Codex thread started
       // while the card was open was the one thing it never picked up.
@@ -274,7 +284,7 @@ export function ImportAgents({ products, filter, walk, onDone, onNewProject, onP
       setOthers(f);
       setThreads(t);
     } finally { setLooking(false); }
-  }, [looking, folder, project]);
+  }, [looking, folder, project, threadKey]);
 
   /**
    * THE ONE PRESS, and it is the whole of the answer. Both doors end here.
@@ -301,17 +311,18 @@ export function ImportAgents({ products, filter, walk, onDone, onNewProject, onP
     setBusy(true);
     try {
       const take = new Set(paths);
-      type Load = { names: string[]; ids: string[] };
+      type Load = { names: string[]; ids: string[]; keys: string[] };
       const byProject = new Map<string, Load>();
       const fresh: { folder: string; name: string; load: Load }[] = [];
       for (const d of dests) {
         const names = d.items.filter((a) => take.has(a.path)).map((a) => a.name);
         const ids = (d.threads ?? []).filter((t) => take.has(t.path)).map((t) => t.id);
+        const keys = (d.threads ?? []).filter((t) => take.has(t.path)).map(t => localThreadKey(t)).filter((k): k is string => !!k);
         if (!names.length && !ids.length) continue;
-        if (d.kind === 'new' && d.folder) fresh.push({ folder: d.folder, name: d.name, load: { names, ids } });
+        if (d.kind === 'new' && d.folder) fresh.push({ folder: d.folder, name: d.name, load: { names, ids, keys } });
         else if (d.slug) {
-          const had = byProject.get(d.slug) ?? { names: [], ids: [] };
-          byProject.set(d.slug, { names: [...had.names, ...names], ids: [...had.ids, ...ids] });
+          const had = byProject.get(d.slug) ?? { names: [], ids: [], keys: [] };
+          byProject.set(d.slug, { names: [...had.names, ...names], ids: [...had.ids, ...ids], keys: [...had.keys, ...keys] });
         }
       }
 
@@ -330,7 +341,7 @@ export function ImportAgents({ products, filter, walk, onDone, onNewProject, onP
           added += r.added; already += r.already;
         }
         if (load.ids.length) {
-          const r = await api.importThreads({ product: slug, threads: load.ids });
+          const r = await api.importThreads({ product: slug, threads: load.ids, threadKeys: load.keys });
           added += r.added; already += r.already;
         }
         inboxes += 1;
@@ -426,9 +437,9 @@ export function ImportAgents({ products, filter, walk, onDone, onNewProject, onP
         {/* THE HEADLINE SAYS WHICH CARD THIS IS (2026-08-28): the offer when
             there is something to bring, the plain answer when there is not. */}
         <div className="ia-top">
-          <h1 className="ia-head">{read && !some ? (alreadyIn > 0 ? CARD.headAllIn : CARD.headNone) : LIST.head}</h1>
+          <h1 className="ia-head">{threadKey ? read && !some ? alreadyIn ? 'This thread is already in your inbox.' : 'This saved thread could not be read.' : 'Add this saved thread to your inbox.' : read && !some ? (alreadyIn > 0 ? CARD.headAllIn : CARD.headNone) : LIST.head}</h1>
         </div>
-        {read && some && <p className="ia-line">{LIST.line}</p>}
+        {read && some && <p className="ia-line">{threadKey ? 'Importing does not start an agent.' : LIST.line}</p>}
 
         {!read && <div className="ia-empty">{CARD.reading}</div>}
 
@@ -441,8 +452,8 @@ export function ImportAgents({ products, filter, walk, onDone, onNewProject, onP
          */}
         {read && !some && (
           <div className="ia-none">
-            <p className="ia-none-where">{alreadyIn > 0 ? CARD.allIn(alreadyIn) : CARD.noneWhere(SECTION.homeFolder)}</p>
-            <p className="ia-none-later">{alreadyIn > 0 ? CARD.laterAllIn : CARD.noneLater}</p>
+            <p className="ia-none-where">{threadKey ? alreadyIn ? 'Open the existing conversation from your inbox.' : 'Try again. Your conversation has not been changed.' : alreadyIn > 0 ? CARD.allIn(alreadyIn) : CARD.noneWhere(SECTION.homeFolder)}</p>
+            <p className="ia-none-later">{threadKey ? 'Recent Claude and Codex history is checked before import.' : alreadyIn > 0 ? CARD.laterAllIn : CARD.noneLater}</p>
             <button type="button" className="ia-look-again" onClick={lookAgain} disabled={looking}>
               {looking ? CARD.looking : CARD.lookAgain}
             </button>

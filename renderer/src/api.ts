@@ -1107,7 +1107,7 @@ export const api = {
   // `agentFolders`: a main process too old to have the channel, or a walk that
   // threw on a folder it could not read, both mean the card draws the agent
   // files it always drew and says nothing it cannot back up.
-  async agentThreads(): Promise<SessionThread[]> {
+  async agentThreads(threadKey?: string | null): Promise<SessionThread[]> {
     if (useFixtures) {
       if (emptyFixtures || params.has('noThreads')) return [];
       return fixtureSessionThreads();
@@ -1115,14 +1115,14 @@ export const api = {
     const zero = window.zero as any;
     if (!zero?.agentThreads) return [];
     try {
-      const r = await zero.agentThreads();
+      const r = await zero.agentThreads(threadKey);
       return Array.isArray(r?.threads) ? r.threads : [];
     } catch { return []; }
   },
 
   // Ids only; the thread itself is the main process's own copy, so a row never
   // names a conversation off a screen that has been open since this morning.
-  async importThreads(p: { product: string; threads: string[] }): Promise<{ added: number; already: number }> {
+  async importThreads(p: { product: string; threads: string[]; threadKeys?: string[] }): Promise<{ added: number; already: number }> {
     if (useFixtures) return { added: p.threads.length, already: 0 };
     const zero = window.zero as any;
     if (!zero?.importThreads) return { added: 0, already: 0 };

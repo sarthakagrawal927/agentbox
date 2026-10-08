@@ -1,0 +1,141 @@
+/* Neutral dark roles adapted from https://ui.shadcn.com/docs/theming.
+   Existing Agentbox controls and all delivery behavior remain in place. */
+:root {
+  --inbox-background: #000000;
+  --inbox-panel: #0a0a0a;
+  --inbox-raised: #171717;
+  --inbox-foreground: #fafafa;
+  --inbox-muted: #a3a3a3;
+  --inbox-border: #262626;
+  --inbox-attention: #e7c69d;
+  --inbox-working: #a5b9d5;
+  --inbox-unavailable: #a3a3a3;
+  --inbox-done: #a3cbb2;
+  --inbox-failed: #f2a396;
+}
+
+/* Selected Onyx flow applied to the existing conversation controls only.
+   Explicit picture skins and light themes retain their established treatment. */
+:root[data-theme="dark"][data-skin="ember-grid"] .app,
+:root[data-theme="dark"]:not([data-skin]) .app {
+  --radius: 12px;
+  --wash: #ffffff06;
+  --wash-strong: #ffffff0c;
+  --film-strong: #ffffff0e;
+  --control-face: var(--inbox-raised);
+  --control-face-line: #303030;
+  --control-shadow: inset 0 1px 0 #ffffff05;
+}
+:root[data-theme="dark"][data-skin="ember-grid"] .workspace-layout::before,
+:root[data-theme="dark"]:not([data-skin]) .workspace-layout::before {
+  border: 1px solid #363636;
+  border-radius: 21px;
+  box-shadow: inset 0 1px 0 #ffffff08, 0 18px 32px #0006;
+}
+:root[data-theme="dark"][data-skin="ember-grid"] .workspace-navigation .workspace-tab.active,
+:root[data-theme="dark"]:not([data-skin]) .workspace-navigation .workspace-tab.active {
+  background: #1b1b1b;
+  border-radius: 10px;
+}
+:root[data-theme="dark"][data-skin="ember-grid"] .dock-card,
+:root[data-theme="dark"]:not([data-skin]) .dock-card {
+  background: var(--inbox-raised);
+  border: 1px solid #303030;
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 #ffffff05;
+}
+:root[data-theme="dark"][data-skin="ember-grid"] .dock-input,
+:root[data-theme="dark"]:not([data-skin]) .dock-input { font-size: 14px; line-height: 1.6; }
+:root[data-theme="dark"][data-skin="ember-grid"] .dock-pill,
+:root[data-theme="dark"]:not([data-skin]) .dock-pill { padding: 14px 18px; }
+
+:root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .workspace-layout.workspace-task:has(.thread-crumb) > .topbar {
+  height: 112px; min-height: 112px; flex-basis: 112px;
+}
+:root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .workspace-task-header > .back-esc.thread-crumb {
+  display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 7px 8px;
+  height: auto; min-height: 60px; padding: 4px; white-space: normal;
+}
+:root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .thread-crumb svg {
+  grid-row: 1 / 3; margin: 3px 0 0;
+}
+:root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .thread-crumb-from {
+  grid-column: 2; justify-self: start; font-size: 10px; letter-spacing: .06em; color: var(--inbox-attention);
+}
+:root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .thread-crumb-sep { display: none; }
+:root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .thread-crumb-name {
+  grid-column: 2; font-family: Geist, sans-serif; font-size: 24px; line-height: 1.2;
+  font-weight: 500; letter-spacing: -.025em; text-transform: none; color: var(--inbox-foreground);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  text-align: left; min-width: 0;
+}
+:root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .workspace-title {
+  font-size: 24px; line-height: 1.2; font-weight: 500; letter-spacing: -.025em;
+}
+:root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .ts-more {
+  border-radius: 8px;
+}
+/* Preserve the same rows and controls when their metadata no longer fits
+   beside the title. Keep every field, including team owner and updated time. */
+@media (max-width: 1000px) {
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .th-grid,
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .th-grid.with-person {
+    grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px;
+  }
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .th-cell-title {
+    grid-column: 1 / -1; white-space: normal; line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .th-cell-proj { grid-column: 1; grid-row: 2; }
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .th-cell-prio { grid-column: 2; grid-row: 2; }
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .th-cell-person { grid-column: 1; grid-row: 3; min-width: 0; }
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .th-cell-when { grid-column: 2; grid-row: 3; font-size: 11px; }
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .th-table .row.th-head { display: none; }
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .tm-tabs { overflow-x: auto; gap: 18px; }
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .tm-tab { flex: none; white-space: nowrap; }
+}
+@media (max-width: 600px) {
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .workspace-layout:not(.workspace-task) > .topbar { padding-left: 16px; padding-right: 16px; }
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .th-right { gap: 6px; }
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .th-search,
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .th-new { width: 32px; flex: none; font-size: 0; padding: 0; gap: 0; justify-content: center; }
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .th-pop { max-width: calc(100vw - 114px); }
+}
+@media (max-width: 700px) {
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .thread-crumb-name { font-size: 19px; }
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .dock-pill { padding: 10px 8px; }
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .dock-pill-text { min-width: 0; padding: 10px 4px; }
+  :root[data-theme="dark"]:is([data-skin="ember-grid"], :not([data-skin])) .dock-pill-key { flex: none; padding-right: 0; margin-left: 8px; }
+}
+:root[data-theme="dark"][data-skin="ember-grid"], :root[data-theme="dark"]:not([data-skin]) {
+  --bg: var(--inbox-background);
+  --surface: var(--inbox-panel);
+  --bg-raised: var(--inbox-raised);
+  --bg-selected: #222222;
+  --bg-hover: #171717;
+  --pop: var(--inbox-panel);
+  --text: var(--inbox-foreground);
+  --text-dim: #d4d4d4;
+  --text-faint: var(--inbox-muted);
+  --agent-ink: var(--inbox-muted);
+  --line: var(--inbox-border);
+  --line-strong: #525252;
+  --accent: #e5e5e5;
+  --select-bar: #e5e5e5;
+  --underline: #737373;
+  --chip-ask: var(--inbox-attention);
+  --on-solid: #171717;
+  --skin-image: none;
+  --skin-tint: none;
+  --skin-veil: none;
+  --skin-pane: var(--inbox-panel);
+  --skin-pane-line: var(--inbox-border);
+  --skin-solid: var(--inbox-panel);
+  --skin-tick: transparent;
+  --skin-rays: none;
+  --doc-page: var(--inbox-panel);
+  --doc-page-held: var(--inbox-panel);
+  --code-ground: var(--inbox-background);
+  --work-fill: var(--inbox-panel);
+  --radius: 8px;
+}
