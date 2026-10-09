@@ -23,6 +23,7 @@
 // AGENTBOX_PUBLISH_ANYWAY=1 npm publish
 
 import { execFileSync } from 'node:child_process';
+import { packedPaths } from '../shared/npm-pack-json.mjs';
 
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
 
@@ -64,7 +65,8 @@ function wouldShip(changed) {
     const raw = execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
       encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 64 * 1024 * 1024,
     });
-    packed = new Set(JSON.parse(raw.slice(raw.indexOf('['))) [0].files.map((f) => f.path));
+    // npm 10 prints an array, npm 12 an object keyed by package name.
+    packed = packedPaths(raw);
   } catch {
     // If npm cannot tell us, the honest answer is the cautious one.
     return changed;

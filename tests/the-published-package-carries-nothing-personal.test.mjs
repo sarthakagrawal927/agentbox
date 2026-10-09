@@ -20,6 +20,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { packManifest } from '../shared/npm-pack-json.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, '..');
@@ -57,11 +58,12 @@ beforeAll(() => {
   }
   // --ignore-scripts because `prepack` builds the renderer, which takes a
   // minute and tells us nothing here. The output has npm's own chatter above
-  // it, so the json is read from the first bracket on.
+  // it, and npm 12 prints an object where npm 10 printed an array, so the
+  // manifest is read by shared/npm-pack-json.mjs, which handles both.
   const raw = execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
     cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 32 * 1024 * 1024,
   });
-  manifest = JSON.parse(raw.slice(raw.indexOf('[')))[0];
+  manifest = packManifest(raw);
 }, 120_000);
 
 afterAll(() => {
