@@ -133,7 +133,9 @@ describe('the sentence says when it ends', () => {
 
   it('says a moment you chose the way the app reads times back', () => {
     expect(untilWords({ until: wednesday + 2 * DAY }, wednesday)).toBe('Friday');
-    expect(untilWords({ until: wednesday + 20 * DAY }, wednesday)).toMatch(/Oct 27/);
+    // Oct 27 in the US, 27 Oct in India: the locale picks the order.
+    expect(untilWords({ until: wednesday + 20 * DAY }, wednesday))
+      .toContain(new Date(wednesday + 20 * DAY).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }));
   });
 
   it('reopens on the end you picked', () => {

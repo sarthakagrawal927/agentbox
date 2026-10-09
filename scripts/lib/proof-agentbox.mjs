@@ -15,11 +15,12 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { Store } from '../../main/store.mjs';
 import { Supervisor } from '../../main/supervisor.mjs';
 
-export const APP_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
+export const APP_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 /**
  * THE STAND-IN FOR `claude -p`, WHICH IS NOT CLAUDE CODE AND SAYS SO.

@@ -18,6 +18,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Supervisor } from '../main/supervisor.mjs';
 import { limitResetMoment } from '../shared/spawn-trouble.mjs';
 
@@ -190,7 +191,7 @@ describe('her own hand lifts what time alone would lift', () => {
 // Electron to run, so, as elsewhere in this suite, they are read as source:
 // each handler she drives must lift the brake before it wakes the fleet.
 describe('the handlers she drives lift the brake before they wake the fleet', () => {
-  const ipc = fs.readFileSync(path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'main', 'ipc.mjs'), 'utf8');
+  const ipc = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'main', 'ipc.mjs'), 'utf8');
   const handler = (name) => {
     const from = ipc.indexOf(`ipcMain.handle('${name}'`);
     return ipc.slice(from, ipc.indexOf('ipcMain.handle(', from + 10));

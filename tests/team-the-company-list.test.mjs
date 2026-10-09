@@ -64,14 +64,17 @@ describe('the company list', () => {
 
 describe('due days', () => {
   const now = new Date(2026, 9, 1, 15, 0); // Thu 1 Oct 2026
+  // A date is written the way the Mac it runs on writes one: "Oct 14" in the
+  // US, "14 Oct" in India, so the expected words come from the same locale.
+  const date = (y, m, d) => new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   it('reads today, tomorrow, a weekday this week, and a date further out', () => {
     expect(dueWords('2026-10-01', now)).toBe('Due today');
     expect(dueWords('2026-10-02', now)).toBe('Due tomorrow');
     expect(dueWords('2026-10-05', now)).toMatch(/^Due Mon/);
-    expect(dueWords('2026-10-14', now)).toMatch(/^Due Oct 14/);
+    expect(dueWords('2026-10-14', now)).toBe(`Due ${date(2026, 10, 14)}`);
   });
   it('says overdue for a day that has passed, and nothing for none', () => {
-    expect(dueWords('2026-09-28', now)).toMatch(/^Overdue Sep 28/);
+    expect(dueWords('2026-09-28', now)).toBe(`Overdue ${date(2026, 9, 28)}`);
     expect(dueWords('none', now)).toBeNull();
     expect(dueWords(undefined, now)).toBeNull();
   });

@@ -101,7 +101,9 @@ describe('the day', () => {
     const now = new Date('2026-08-13T21:00:00').getTime();
     expect(dayHeading(new Date('2026-08-13T06:07:00').getTime(), now)).toBe('Today');
     expect(dayHeading(new Date('2026-08-12T18:07:00').getTime(), now)).toBe('Yesterday');
-    expect(dayHeading(new Date('2026-08-06T18:07:00').getTime(), now)).toMatch(/Thu.*Aug.*6/);
+    // "Thu, Aug 6" in the US, "Thu, 6 Aug" in India: the locale picks the order.
+    expect(dayHeading(new Date('2026-08-06T18:07:00').getTime(), now))
+      .toBe(new Date('2026-08-06T18:07:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }));
     expect(dayHeading(new Date('2026-08-06T18:07:00').getTime(), now)).not.toMatch(/Yest/);
   });
 

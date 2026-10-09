@@ -139,5 +139,8 @@ describe('which day it next runs, in the time column', () => {
   it('today, before the hour', () => expect(nextRunWords(rule(), at(2026, 10, 4, 8))).toBe('Today'));
   it('tomorrow, just after it', () => expect(nextRunWords(rule(), at(2026, 10, 4, 9, 1))).toBe('Tomorrow'));
   it('a weekday name inside the week', () => expect(nextRunWords(rule({ every: 'week', on: 3 }), NOW)).toBe('Wednesday'));
-  it('a date a week or more out', () => expect(nextRunWords(rule({ every: 'week', on: 0 }), NOW)).toBe('Oct 11'));
+  // Written the way the Mac it runs on writes a date: Oct 11 in the US, 11 Oct
+  // in India. The test pins which day, not the order of its words.
+  it('a date a week or more out', () => expect(nextRunWords(rule({ every: 'week', on: 0 }), NOW))
+    .toBe(new Date(2026, 9, 11).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })));
 });

@@ -18,6 +18,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { analyticsKey, createAnalytics, diagnosticsOn } from '../main/analytics.mjs';
 import { EVENTS, EVENT_NAMES, sanitize } from '../shared/analytics-events.mjs';
 import { Name } from '../shared/product-name.mjs';
@@ -32,7 +33,7 @@ function fakeClient() {
 
 describe('the renderer cannot send anything', () => {
   it('has no analytics SDK in it at all', () => {
-    const root = new URL('../renderer/', import.meta.url).pathname;
+    const root = fileURLToPath(new URL('../renderer/', import.meta.url));
     const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
       // Build output is not source: renderer/.gitignore already declares dist-*/ scratch
       // builds, and a bundled library with the word "amplitude" in it is not an SDK we ship.

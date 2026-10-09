@@ -78,7 +78,9 @@ describe('snoozing a thread', () => {
     expect(snoozeWords(at(1, 17), T)).toBe('until 5:00pm');
     expect(snoozeWords(at(2, 9), T)).toBe('until tomorrow 9:00am');
     expect(snoozeWords(at(5, 9), T)).toBe('until Mon 9:00am');
-    expect(snoozeWords(at(12, 9), T)).toMatch(/^until \w+, Oct 12 9:00am$/);
+    // "Mon, Oct 12" in the US, "Mon, 12 Oct" in India: the locale picks the order.
+    const date = new Date(at(12, 9)).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    expect(snoozeWords(at(12, 9), T)).toBe(`until ${date} 9:00am`);
   });
 
   it('says it came back when you bring it back early', () => {

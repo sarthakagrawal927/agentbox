@@ -122,7 +122,9 @@ describe('the words it is drawn with', () => {
 
   it('gives a date once a weekday would mean the wrong one', () => {
     // Eight days out: "until Thursday" would read as tomorrow week.
-    expect(holdsUntil(new Date('2026-10-15T18:00:00').getTime(), wed9)).toMatch(/^until \w+ 15$/);
+    // "Oct 15" in the US, "15 Oct" in India: the locale picks the order.
+    const date = new Date('2026-10-15T18:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    expect(holdsUntil(new Date('2026-10-15T18:00:00').getTime(), wed9)).toBe(`until ${date}`);
   });
 
   it('says nothing when it holds until you clear it, or has already passed', () => {

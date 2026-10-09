@@ -30,9 +30,10 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { NAME, Name, nameSlug } from '../shared/product-name.mjs';
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WRITE = process.argv.includes('--write');
 
 /** The Info.plist sentences macOS shows when it asks for a folder. `{Name}`
@@ -103,7 +104,7 @@ export function readPackage() {
 // THE CLI IS BEHIND THIS GUARD because the test imports `drift` out of this
 // file, and a module that rewrites package.json the moment it is imported
 // rewrites it during `vitest run`.
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
   const pkg = readPackage();
   const bad = drift(pkg);
 

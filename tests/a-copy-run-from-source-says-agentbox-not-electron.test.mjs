@@ -20,10 +20,11 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { brandElectron } from '../scripts/brand-electron.mjs';
 
-const ICON = new URL('../build/icon.icns', import.meta.url).pathname;
+const ICON = fileURLToPath(new URL('../build/icon.icns', import.meta.url));
 const read = (plist, key) => execFileSync('/usr/bin/plutil', ['-extract', key, 'raw', '-o', '-', plist], { encoding: 'utf8' }).trim();
 
 let dir;
