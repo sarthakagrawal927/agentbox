@@ -63,6 +63,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NAME } from '../shared/product-name.mjs';
 import { liveDownload, noReleaseYet, RELEASE_REPO, DOWNLOAD_ASSET } from './lib/live-download.mjs';
+import { readReleaseIdentity, refusal } from './lib/release-identity.mjs';
 
 const repo = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REPO = RELEASE_REPO;
@@ -77,6 +78,19 @@ const target = argv.find((a) => !a.startsWith('--'));
 function die(...lines) {
   console.error(`\n${lines.join('\n')}\n`);
   process.exit(1);
+}
+
+// FAIL CLOSED ON WHERE THIS UPLOADS (2026-10-09). This fork does not own
+// RELEASE_REPO, which is upstream Agentbox's feed. Nothing is read, uploaded or
+// even described until agent-inbox-release.json names the owner's feed, and
+// then only if this script would upload to that same feed.
+const release = readReleaseIdentity(repo);
+if (!release.ok) die(...refusal(release.problems, 'publishing'));
+if (release.identity.updateFeed.toLowerCase() !== REPO.toLowerCase()) {
+  die(
+    `Not publishing: agent-inbox-release.json names the update feed ${release.identity.updateFeed}, and this script uploads to ${REPO}.`,
+    'Change RELEASE_REPO in scripts/lib/live-download.mjs and build.publish in package.json to the same repository first.',
+  );
 }
 
 function md5(file) {

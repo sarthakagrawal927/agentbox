@@ -107,6 +107,10 @@ unsigned directory build. So no command yet signs and notarizes Agent Inbox
 under its own identity with its own update destination. Running `release` as
 it stands would sign an Agentbox build that points at the upstream feed.
 
+Follow-up: `release`, `pack` and `publish-download.mjs` now refuse to run until
+the owner fills in `agent-inbox-release.json`. See
+[release-identity.md](release-identity.md).
+
 ## Owner checklist
 
 Native and live checks need desktop access and the owner present. Run them on

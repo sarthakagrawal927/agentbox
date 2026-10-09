@@ -1,0 +1,6 @@
+{
+  "_status": "UNSET. The owner has not chosen the Agent Inbox release identity, so `npm run release`, `npm run pack` and scripts/publish-download.mjs refuse to run. Fill in all three values; docs/release-identity.md says what each one is.",
+  "bundleId": null,
+  "developerIdTeamId": null,
+  "updateFeed": null
+}

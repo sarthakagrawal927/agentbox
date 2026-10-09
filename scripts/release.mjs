@@ -63,6 +63,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { envName, readEnv } from '../shared/product-name.mjs';
 import { liveDownload, RELEASE_REPO, DOWNLOAD_ASSET } from './lib/live-download.mjs';
+import { identityBuilderArgs, readReleaseIdentity, refusal } from './lib/release-identity.mjs';
 
 const repo = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const noSign = process.argv.includes('--no-sign');
@@ -71,6 +72,15 @@ function die(lines) {
   console.error(`\n${lines.join('\n')}\n`);
   process.exit(1);
 }
+
+// FAIL CLOSED ON WHO THIS BUILD IS (2026-10-09). This is the Agent Inbox fork,
+// and package.json still carries upstream Agentbox's bundle ID and update
+// feed. Until the owner fills in agent-inbox-release.json nothing here builds,
+// signed or not, and nothing reads the keychain. scripts/lib/release-identity.mjs
+// has the rules; docs/release-identity.md says what the three values are.
+const release = readReleaseIdentity(repo);
+if (!release.ok) die(refusal(release.problems, noSign ? 'packaging' : 'releasing'));
+const releaseIdentity = release.identity;
 
 // The one Developer ID certificate on this machine, and the team it belongs to.
 // Read rather than assumed, because a team id typed from memory produces a
@@ -181,6 +191,13 @@ if (!noSign) {
       'Apple would reject the notarisation with a message that never says this, so it is checked here instead.',
     ]);
   }
+  if (identity.team !== releaseIdentity.developerIdTeamId) {
+    die([
+      `The certificate on this Mac belongs to team "${identity.team}", and agent-inbox-release.json names "${releaseIdentity.developerIdTeamId}".`,
+      `The certificate is ${identity.name}.`,
+      'Agent Inbox is signed only by the Developer ID team the owner chose.',
+    ]);
+  }
   if (process.env.GH_TOKEN) {
     console.log('note: GH_TOKEN is set and is not used. This build publishes nothing; it writes release/*.dmg and stops.');
   }
@@ -204,6 +221,9 @@ if (!fs.existsSync(path.join(repo, 'build', 'icon.icns'))) {
 // package.json now carries a publish config so the APP can find its updates,
 // and that same config is what electron-builder would upload through.
 const args = ['--mac', '--publish', 'never'];
+// The bundle ID and update feed the owner chose, over upstream's in package.json.
+args.push(...identityBuilderArgs(releaseIdentity));
+console.log(`→ building as ${releaseIdentity.bundleId}, updating from ${releaseIdentity.updateFeed}`);
 // Baked into the packaged package.json, which main/analytics.mjs reads. Only
 // the key travels; nothing else about this machine does.
 if (analyticsKey) {
