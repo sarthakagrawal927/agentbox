@@ -98,7 +98,7 @@ describe('the shortcuts are off the screen and the verbs are not', () => {
     // rule over it and nothing in it is 51px of nothing.
     const guard = focus.slice(focus.lastIndexOf('{((', focus.indexOf('<div className="focus-actions">')), focus.indexOf('<div className="focus-actions">'));
     expect(guard).toContain('(scheduledUntil ?? 0) > 0 && !!onUnschedule');
-    expect(guard).toContain('!!agent && !agentTakesReply && !!onReveal');
+    expect(guard).toContain('!!agent && (replyBlocked || !agentTakesReply) && !!onReveal');
     expect(guard).toContain("item.status === 'blocked'");
     // And an In progress task no longer opens this row by itself, because the
     // one button it used to open it for has moved to the dock.

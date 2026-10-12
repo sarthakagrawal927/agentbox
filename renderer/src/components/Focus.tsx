@@ -73,7 +73,7 @@ import { applyDockHeight } from '../dock-height';
 import { resumeTo } from '../thread-bottom';
 import { optionIsClipped, optionPeek } from '../option-peek';
 import { askLine, askFull, askIsClipped } from '../ask-line';
-import { replyIsSwallowed, replyReaches } from '../../../shared/agents.mjs';
+import { replyIsSwallowed, replyReaches, replyBlockReason } from '../../../shared/agents.mjs';
 import { recapFor, type Recap as RecapValue } from '../recap';
 import type { LiveFacts } from '../live-line';
 import { offersRunNow } from '../run-now';
@@ -1598,7 +1598,7 @@ export function Focus({ artifactView, previewSample, onOpenArtifact, artifactSlo
        */}
       {((item.start === 'later' && !!onUnschedule)
         || ((scheduledUntil ?? 0) > 0 && !!onUnschedule)
-        || (!!agent && !agentTakesReply && !!onReveal)
+        || (!!agent && (replyBlocked || !agentTakesReply) && !!onReveal)
         || (!agent && item.status === 'blocked' && !session)) && (
       <div className="focus-actions">
         {/* ADDED TO LATER (w-afb66e6661): it has no moment to read back, so
@@ -1660,7 +1660,7 @@ export function Focus({ artifactView, previewSample, onOpenArtifact, artifactSlo
             in. This is honestly named: it brings the APPLICATION the session is
             running inside to the front, which is the whole of what is actually
             available. Nothing public focuses one pane inside another app. */}
-        {agent && !agentTakesReply && onReveal && (
+        {agent && (replyBlocked || !agentTakesReply) && onReveal && (
           <button className="focus-stop" onClick={onReveal}>
             take me to it
             <span className="dim">{' · '}opens the app it is running in</span>
@@ -1715,19 +1715,11 @@ export function Focus({ artifactView, previewSample, onOpenArtifact, artifactSlo
               What to do instead is in the message itself, per cause.
            */}
           {update || trouble ? null : replyBlocked ? (
-            /*
-             * NO REPLY BOX ON AN AGENT A REPLY CANNOT CLEAR. It is frozen on a
-               box asking to approve something, and a message queues behind that
-               box: sending one would look like it worked and change nothing.
-               The system swallowing something the user wrote is the failure this
-               codebase cares about most, so the box is simply not offered.
-
-               THIS IS THE ONLY ONE. A quiet agent used to get this pill too,
-               saying there was nothing there to answer, and that was false: it
-               is sitting at its prompt and it is listening. w-9348b8d148. */
+            /* Permission prompts and unverified outside connections both need
+               a host-app handoff, with a reason specific to the boundary. */
             <div className="dock-pill dock-pill-static">
               <span className="dock-pill-text">
-                Answer this one in its own window. A message from here would wait behind the box it is stuck on.
+                {agent && replyBlockReason(agent)}
               </span>
             </div>
           ) : replyOpen ? (

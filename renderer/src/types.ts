@@ -457,6 +457,8 @@ export interface AgentSession {
   // her inbox as work items, and a second row about the same agent is a
   // rejected duplicate picture.
   startedByZero: boolean;
+  /** Explicitly false when a local outside session has no verified reply channel. */
+  replyVerified?: boolean;
 }
 
 // ONE TURN OF A CONVERSATION THE USER OPENED. Hers reads at full strength and

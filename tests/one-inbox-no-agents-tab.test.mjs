@@ -75,15 +75,14 @@ describe('the tab is gone, not hidden', () => {
 // A QUIET AGENT TAKES A REPLY. The dock used to hide the box on every agent
 // that was not waiting on `input needed` and tell her there was nothing there
 // to answer, which was false: an idle session sits at its prompt listening, and
-// a message written to it lands and is worked on (measured 2026-08-17).The one
-// real reason is a permission box, and that is the only case left.
+// a message written to it lands and is worked on (measured 2026-08-17).Upstream permission boxes and explicitly unverified local connections
+// keep their distinct blocked reasons.
 describe('the dock hides the reply box only where a message is swallowed', () => {
   const focus = read('renderer/src/components/Focus.tsx');
 
   it('gates on the permission box, not on whether the agent is asking', () => {
     expect(focus).toMatch(/const replyBlocked = agent \? replyIsSwallowed\(agent\) : false;/);
-    // The permission box is still the only thing that takes the box away from
-    // an AGENT. The row that says her tasks are not running has no reply box
+    // The shared availability policy takes the box away from an AGENT. The row that says her tasks are not running has no reply box
     // either, and that is not a gate on the agent: there is no session behind
     // that row at all. Nor does a made update row, if one is ever opened; the
     // new version is announced in the sidebar now (w-7a39dace23), so its
@@ -92,7 +91,8 @@ describe('the dock hides the reply box only where a message is swallowed', () =>
   });
 
   it('keeps the box sentence for the one that has a box', () => {
-    expect(focus).toMatch(/would wait behind the box it is stuck on/);
+    expect(focus).toContain('replyBlockReason(agent)');
+    expect(read('shared/agents.mjs')).toMatch(/would wait behind the box it is stuck on/);
   });
 
   it('no longer tells a quiet agent there is nothing to answer', () => {

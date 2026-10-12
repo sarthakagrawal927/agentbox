@@ -30,6 +30,7 @@ export interface AgentLike {
   product?: string | null;
   productName?: string | null;
   startedByZero?: boolean;
+  replyVerified?: boolean;
   // The moment the user said they would come back to it, and when they said so.
   // Set by the founder alone; main/agent-schedule.mjs keeps it.
   runAt?: number;
@@ -49,6 +50,7 @@ export function startedByZero(
 export function asksSomething(agent: AgentLike): boolean;
 export function replyReaches(agent: AgentLike): boolean;
 export function replyIsSwallowed(agent: AgentLike): boolean;
+export function replyBlockReason(agent: AgentLike): string | null;
 // She spoke to it and it has not come back to a stop since.
 export function tookHerReply(agent: AgentLike): boolean;
 export function stoppedSince(agent: AgentLike, since: number): boolean;

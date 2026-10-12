@@ -96,7 +96,7 @@ export function replyReaches(agent) {
   return asksSomething(agent) && agent.waitingFor === 'input needed';
 }
 
-// THE ONE AGENT SHE CANNOT WRITE TO, and it is only ever this one.
+// THE UPSTREAM PERMISSION GATE, plus an explicit local transport boundary.
 //
 // There was not one. The box was hidden on every agent that was not waiting on
 // `input needed`, which is nearly all of them, and the dock said out loud that
@@ -113,7 +113,19 @@ export function replyReaches(agent) {
 // box instead of clearing it. `main/agents.mjs` already refused exactly that
 // one and nothing else, so the UI was the whole of the block.
 export function replyIsSwallowed(agent) {
-  return agent?.waitingFor === 'permission prompt';
+  return replyBlockReason(agent) !== null;
+}
+
+// Explicit false belongs to the local entry point. Older upstream inventories
+// omit the capability and retain their existing reply behavior.
+export function replyBlockReason(agent) {
+  if (agent?.waitingFor === 'permission prompt') {
+    return 'Answer this one in its own window. A message from here would wait behind the box it is stuck on.';
+  }
+  if (agent?.replyVerified === false) {
+    return 'Answer this one in its own window. This session has no verified reply connection.';
+  }
+  return null;
 }
 
 /* ------------------------- SHE SPOKE, IT IS WORKING ---------------------- */

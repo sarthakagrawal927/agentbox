@@ -1,3 +1,4 @@
+import { outsideAgentReplyState, replyToOutsideAgent } from './outside-agent-replies.mjs';
 import { openSourceFile } from './open-source-file.mjs';
 import {submitReply} from './live-replies.mjs';
 import { createEngineSetup } from './engine-setup.mjs';
@@ -289,7 +290,7 @@ export function registerIpc({ store, supervisor, config, window, analytics = NO_
         seenAgents.add(key);
         analytics.track('agent_seen');
       }
-      return live;
+      return live.map((agent) => outsideAgentReplyState(agent, localInbox));
     } catch {
       // Her inbox is not allowed to fail because a `ps` did. An empty list here
       // reads as "no outside agents", which is the state of most machines.
@@ -473,9 +474,11 @@ export function registerIpc({ store, supervisor, config, window, analytics = NO_
   // anywhere outside its own store, and it writes into a socket rather than to
   // disk. The reader refuses a send to an agent frozen on a permission box, and
   // reports back whether the agent actually moved rather than assuming it did.
+  // Local Inbox refuses this unverified outside transport before it writes;
+  // app-owned conversations use their acknowledged submitReply path.
   ipcMain.handle('zero:agent-reply', async (_e, { pid, text }) => {
     try {
-      const out = await agents.reply(Number(pid), text);
+      const out = await replyToOutsideAgent({ localInbox, pid: Number(pid), text, reply: agents.reply });
       // AND THE ROW REMEMBERS THAT THE USER SPOKE. Only on a delivered message: a
       // mark written for a send that failed would move the row into In progress
       // over words that never arrived, which is the failure this codebase cares
