@@ -23,5 +23,8 @@ it('does not offer a session on unsupported hosts',()=>{
  const html=view({phase:'unsupported',message:'Requires macOS 26.'});expect(html).toContain('Requires macOS 26.');expect(html).not.toContain('Start session');
 });
 it('finds the controls using insomnia, sleep and lid words',()=>{
- for(const query of ['insomnia','sleep','lid'])expect(searchSettings(query,{pages:['running']}).some(hit=>hit.anchor==='keep-awake')).toBe(true);
+ for(const query of ['insomnia','sleep','lid'])expect(searchSettings(query,{pages:['running'],localInbox:true}).some(hit=>hit.anchor==='keep-awake')).toBe(true);
+});
+it('does not advertise local keep-awake controls in the upstream app',()=>{
+ expect(searchSettings('insomnia',{pages:['running']})).toEqual([]);
 });

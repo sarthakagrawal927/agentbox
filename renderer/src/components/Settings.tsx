@@ -1140,8 +1140,8 @@ export function Settings({ look, onSetLook, tune, onSetTune, onResetTune, keyHin
    *  a build with a team cloud. */
   const pages = SETTINGS_PAGES.filter((p) => p.id !== 'team' || !!teamPane);
   const hits = useMemo(
-    () => searchSettings(query, { pages: pages.map((p) => p.id), projects }),
-    [query, pages.length, projects],
+    () => searchSettings(query, { pages: pages.map((p) => p.id), projects, localInbox: w?.localInbox }),
+    [query, pages.length, projects, w?.localInbox],
   );
   useEffect(() => { setHitAt(0); }, [query]);
 

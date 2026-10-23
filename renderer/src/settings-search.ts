@@ -33,10 +33,10 @@ const pageLabel = (id: SettingsPageId) => SETTINGS_PAGES.find((p) => p.id === id
 
 /** One thing the search can land on. `anchor` is the group it scrolls to on
  *  that page; `words` are what a person might type that is not in the name. */
-type Entry = { page: SettingsPageId; label: string; anchor?: string; words?: string };
+type Entry = { page: SettingsPageId; label: string; anchor?: string; words?: string; localOnly?: boolean };
 
 const ENTRIES: Entry[] = [
-  { page: 'running', label: 'Keep Mac awake', anchor: 'keep-awake', words: 'insomnia sleep lid closed timer duration power' },
+  { page: 'running', label: 'Keep Mac awake', anchor: 'keep-awake', words: 'insomnia sleep lid closed timer duration power', localOnly: true },
   { page: 'general', label: 'Your account', anchor: 'account', words: 'signed in sign out log out logout email' },
   { page: 'general', label: 'Show keyboard shortcut hints', anchor: 'keys', words: 'keys hints' },
   { page: 'general', label: 'Counts and crash reports', anchor: 'privacy', words: 'privacy diagnostics analytics telemetry sends data' },
@@ -73,9 +73,10 @@ const words = (s: string) => s.toLowerCase().split(/[^a-z0-9.]+/).filter(Boolean
 // Every typed word has to be the start of some word in the text.
 const covers = (have: string[], want: string[]) => want.every((w) => have.some((h) => h.startsWith(w)));
 
-export function searchSettings(query: string, { pages, projects = [] }: {
+export function searchSettings(query: string, { pages, projects = [], localInbox = false }: {
   pages: readonly string[];
   projects?: Array<{ slug: string; name: string }>;
+  localInbox?: boolean;
 }): SettingsHit[] {
   const want = words(query);
   if (!want.length) return [];
@@ -83,7 +84,7 @@ export function searchSettings(query: string, { pages, projects = [] }: {
   const named: SettingsHit[] = [];
   const hidden: SettingsHit[] = [];
   for (const e of ENTRIES) {
-    if (!open.has(e.page)) continue;
+    if (!open.has(e.page) || (e.localOnly && !localInbox)) continue;
     const page = pageLabel(e.page);
     const hit = { page: e.page, label: e.label, pageLabel: page, anchor: e.anchor };
     // The name, with the page's own name, so "codex permission" finds the Codex
