@@ -1,5 +1,6 @@
 import { artifactSampleChange, artifactSampleNotes, reviewSampleChange } from './artifact-fixtures';
 import {updateFixture} from './agent-update-fixture';
+import type {AwakeCommand,AwakeResult,AwakeState} from '../../shared/keep-awake.mjs';
 // One seam between the UI and the world. Real mode talks to the preload
 // bridge; fixtures mode (?fixtures=1) serves canned data so the UI can be
 // developed, reviewed, and screenshotted without a live store or any agents.
@@ -106,6 +107,7 @@ const emptySettings: Settings = {
 // nothing else: there is no disk under fixtures, and no answer from here ever
 // claims a save.
 const fixtureSettingsState: any = structuredClone(fixtureSettings);
+let fixtureAwakeState:AwakeState={phase:'setup',message:'Set up lid-closed sessions.'};
 // AND WHICH OF THE FOUR MACHINES THOSE SETTINGS BELONG TO. Applied once, here,
 // so that a switch she moves on the screen moves against the world she asked
 // for -- including the Coding agent row itself, which is a real control in
@@ -143,6 +145,17 @@ function fixtureWrite(scope: 'project' | 'workspace', p: any): Settings {
 
 export const api = {
   isFixtures: useFixtures,
+
+  async keepAwake(command:AwakeCommand):Promise<AwakeResult> {
+    if(useFixtures){
+      if(command.action==='setup'||command.action==='end'||command.action==='quit')fixtureAwakeState={phase:'idle',endsAt:null,warnings:[]};
+      if(command.action==='start')fixtureAwakeState={phase:'active',endsAt:Date.now()+command.minutes*60000,warnings:[]};
+      if(command.action==='extend'&&fixtureAwakeState.phase==='active')fixtureAwakeState={...fixtureAwakeState,endsAt:fixtureAwakeState.endsAt+command.minutes*60000};
+      return {ok:true,state:fixtureAwakeState};
+    }
+    if(!window.zero?.keepAwake)return {ok:false,error:'Open the desktop Agent Inbox to use keep-awake controls.',state:{phase:'unavailable',message:'Keep-awake is available in the local desktop app.'}};
+    return window.zero.keepAwake(command);
+  },
 
   async snapshot(): Promise<Snapshot> {
     if (emptyFixtures) {

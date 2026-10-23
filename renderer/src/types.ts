@@ -1075,6 +1075,7 @@ declare global {
       // again, so the screen redraws from what the main process now believes
       // rather than from what the click assumed.
       settingsRead?(): Promise<Settings>;
+      keepAwake?(command:import('../../shared/keep-awake.mjs').AwakeCommand):Promise<import('../../shared/keep-awake.mjs').AwakeResult>;
       setProjectSetting?(p: { product: string; key: string; value: unknown }): Promise<Settings>;
       setWorkspaceSetting?(p: { key: string; value: unknown }): Promise<Settings>;
       projectInstructionsRead?(p: { product: string }): Promise<{ ok: boolean; text: string; error?: string }>;

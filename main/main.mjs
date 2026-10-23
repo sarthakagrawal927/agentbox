@@ -2,6 +2,8 @@
 // file-derived store, and a supervisor of headless sessions.
 
 import { app, BrowserWindow, Menu, Notification, clipboard, crashReporter, dialog, ipcMain, nativeImage, net, powerMonitor, protocol, screen as electronScreen, shell, session, safeStorage } from 'electron';
+import {desktopAwakeController} from './keep-awake-setup.mjs';
+import {registerAwakeIpc} from './keep-awake.mjs';
 import * as workItemsDisk from './store/work-items.mjs';
 import { createTeamService, teamStateFile } from './team/index.mjs';
 import { loadCloudConfig, supabaseSession } from './team/session.mjs';
@@ -684,6 +686,24 @@ async function createWindow() {
   pushUpdate = ipc.push;
   // Bind the menu's approval door before starting background services.
   answerApproval = ipc.answerApproval;
+  if (LOCAL_INBOX) {
+    const awake = desktopAwakeController({appDir,resourcesPath:process.resourcesPath,packaged:app.isPackaged});
+    registerAwakeIpc({ipcMain,window,controller:awake});
+    // Reconcile an earlier journal even when Settings is never opened.
+    void awake.command({action:'status'});
+    let restoredForQuit = false, endingForQuit = false;
+    app.on('before-quit', event => {
+      if (restoredForQuit) return;
+      event.preventDefault();
+      if (endingForQuit) return;
+      endingForQuit = true;
+      void awake.shutdown().then(result => {
+        endingForQuit = false;
+        if (result.ok && result.state.phase === 'idle') { restoredForQuit = true; app.quit(); }
+        else { dialog.showErrorBox('Keep-awake restoration is unfinished', result.ok ? 'Keep Agent Inbox open and retry restoration in Settings → Running.' : result.error); }
+      });
+    });
+  }
   threadDiscovery.start();
   app.on('before-quit', () => threadDiscovery.stop());
   app.on('before-quit', () => lifecycleMonitor.stop());

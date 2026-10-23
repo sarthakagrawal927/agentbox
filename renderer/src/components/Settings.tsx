@@ -30,6 +30,7 @@ import type { ReactNode } from 'react';
 import type { AgentMode, CodexModeId, PermissionMode, ProjectSettings, Settings as SettingsModel } from '../types';
 import { api, RESTART_NOTE } from '../api';
 import { InstructionSettings, sizeLabel } from './InstructionSettings';
+import { KeepAwakeSettings } from './KeepAwake';
 import { EVERY } from '../instruction-scope';
 import type {Usage, WorkspaceSettings} from '../types';
 import { limitRows } from '../../../shared/usage.mjs';
@@ -1430,6 +1431,7 @@ export function Settings({ look, onSetLook, tune, onSetTune, onResetTune, keyHin
             Mac is short of memory, and which of your own reach the inbox. */}
         {model && w && pane === 'running' && (
           <Page title="Running">
+            {w.localInbox && <KeepAwakeSettings />}
             {/* WHAT IT MEASURED, FIRST (w-e5225b62ba, her drawing). These facts
                 used to be the last clause of three grey paragraphs — "6 running
                 now", "Holding 3 commands now; memory is tight", "Nothing running

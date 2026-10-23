@@ -50,10 +50,11 @@
   ],
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "build": "node scripts/prepare-terminal.mjs && node scripts/build-lifecycle-helper.mjs && node scripts/read-claude-commands.mjs && node scripts/read-claude-models.mjs && vite build renderer",
+    "build": "node scripts/prepare-terminal.mjs && node scripts/build-lifecycle-helper.mjs && node scripts/build-awake-helper.mjs && node scripts/read-claude-commands.mjs && node scripts/read-claude-models.mjs && vite build renderer",
     "start": "npm run build && node scripts/brand-electron.mjs && electron .",
     "test": "vitest run",
     "typecheck": "node node_modules/typescript/bin/tsc --noEmit -p renderer/tsconfig.json",
+    "test:awake": "swift test --package-path native/awake",
     "test:changed": "node scripts/test-what-changed.mjs",
     "icon": "electron scripts/make-icon.mjs",
     "pack": "node scripts/release.mjs --no-sign",
@@ -142,6 +143,10 @@
       {
         "from": "native/bin/AgentInboxLifecycle",
         "to": "native/AgentInboxLifecycle"
+      },
+      {
+        "from": "native/awake/bin/AgentInboxAwake.app",
+        "to": "native/AgentInboxAwake.app"
       }
     ],
     "mac": {

@@ -38,6 +38,16 @@ replies. An unavailable connection provides a host-app handoff.
 
 ## Boundaries
 
+Explicit timed keep-awake sessions are an owner-requested addition. The local
+app embeds Insomnia's MIT-licensed power/recovery engine, isolated from a separate
+Insomnia installation. On Apple silicon with macOS 26+, Settings → Running
+offers administrator setup, start, extend and end. The recovery agent is armed
+before sleep is disabled; deadlines and journaled restoration survive a helper
+crash. Quitting waits for confirmed restoration. Audio/brightness can require
+reopening the app after a crash; physical lid-close qualification remains a
+separate check. App freezing, Docker pausing, App Nap preference writes, hotspot
+handoff, tmux input and browser relaunch are disabled in this integration.
+
 Inbox state stays on this machine. Model requests use the user's existing
 provider account and may travel to that provider. Cloud teams, remote access,
 voice, analytics, autonomous project driving, process termination, cleanup and

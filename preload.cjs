@@ -126,6 +126,7 @@ contextBridge.exposeInMainWorld('zero', {
   messageRulesWrite: (payload) => ipcRenderer.invoke('zero:message-rules-write', payload),
   // The settings screen: the workspace, and every project's own settings.
   settingsRead: () => ipcRenderer.invoke('zero:settings-read'),
+  keepAwake: (command) => ipcRenderer.invoke('inbox:keep-awake', command),
   // Look for Claude Code again, from scratch. The last card of the walk is the
   // only caller: it will not open the inbox without Claude Code, so it owes
   // whoever installs it a search that is really a search.

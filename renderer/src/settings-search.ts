@@ -36,6 +36,7 @@ const pageLabel = (id: SettingsPageId) => SETTINGS_PAGES.find((p) => p.id === id
 type Entry = { page: SettingsPageId; label: string; anchor?: string; words?: string };
 
 const ENTRIES: Entry[] = [
+  { page: 'running', label: 'Keep Mac awake', anchor: 'keep-awake', words: 'insomnia sleep lid closed timer duration power' },
   { page: 'general', label: 'Your account', anchor: 'account', words: 'signed in sign out log out logout email' },
   { page: 'general', label: 'Show keyboard shortcut hints', anchor: 'keys', words: 'keys hints' },
   { page: 'general', label: 'Counts and crash reports', anchor: 'privacy', words: 'privacy diagnostics analytics telemetry sends data' },

@@ -160,4 +160,4 @@ export const WRAPPED_ARGS = {
 // `onWriteHeld` is the desktop's ⌘R asking the page to write what the undo
 // window holds before it reloads (main/write-before-reload.mjs). A browser
 // reload asks nobody; the page writes on `pagehide` there instead.
-export const DESKTOP_ONLY = ['pathForFile', 'onWriteHeld', 'companionRows'];
+export const DESKTOP_ONLY = ['pathForFile', 'onWriteHeld', 'companionRows', 'keepAwake'];
