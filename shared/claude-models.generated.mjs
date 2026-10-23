@@ -11,8 +11,8 @@
 // number typed into a file of ours would look authoritative while being a
 // guess. Running an old model by mistake is the failure being avoided.
 
-export const READ_FROM = "2.1.294";
-export const READ_AT = "2026-10-08";
+export const READ_FROM = "2.1.309";
+export const READ_AT = "2026-10-23";
 
 export const CLAUDE_MODELS = [
   {"alias":"opus","id":"claude-opus-5-5","label":"Opus 5.5","defaultLevel":"medium"},
