@@ -99,4 +99,4 @@ async function main() {
  fs.writeFileSync(path.join(output,'SHA256SUMS'),assets.map(asset=>`${asset.sha256}  ${asset.name}`).join('\n')+'\n');
  console.log(`Built signed Inbox preview ${version}. Not notarized; physical lid-close qualification remains unverified.\n${manifestPath}`);
 }
-if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))main().catch(error=>{console.error(error.message);process.exitCode=1;});
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))await main().catch(error=>{console.error(error.message);process.exitCode=1;});
