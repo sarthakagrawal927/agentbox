@@ -97,6 +97,11 @@ disables telemetry, cloud teams and the upstream updater, and defaults new
 conversations to Claude Plan and Codex Read Only. It is an unsigned development
 build, not a signed/notarized release or an installed production replacement.
 
+Signed Inbox preview packaging uses the permanent `com.significanthobbies.agentinbox`
+identity and the same local data folder and product restrictions. Downloads
+are manual Developer ID-signed previews, with source and checksum manifests;
+they are not notarized and do not claim physical lid-close qualification.
+
 Local thread discovery runs automatically at startup and once a minute in a
 bounded background worker. It reads existing Claude Code, Claude Desktop and
 Codex session history without changing provider configuration. Current coverage

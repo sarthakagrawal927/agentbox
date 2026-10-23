@@ -13,8 +13,35 @@ malformed, or still upstream's.
 | `node scripts/publish-download.mjs` | refuses before reading or uploading anything |
 | `node scripts/pack-local-inbox.mjs` | unaffected: unsigned local review build, `publish: never` |
 
-The committed file has every value set to `null`, and `_status` says UNSET.
-Agents do not choose these values. The owner does.
+The release identity is configured for the owner-authorized Agent Inbox preview:
+bundle ID `com.significanthobbies.agentinbox`, the available Fleet Developer ID
+team, and releases in `sarthakagrawal927/agentbox`. The local review build keeps
+its separate `com.significanthobbies.agentinbox.local` ID.
+
+## Signed Inbox previews
+
+Use `npm run release:inbox` to build a Developer ID-signed Apple silicon DMG
+and ZIP. This uses the local Inbox entry point and preserves its data folder,
+disabled telemetry/cloud teams, and manual updates. It does not read analytics
+or provider credentials. The native recovery helper is signed with the same
+Developer ID before it is bundled.
+
+The output is `release/inbox-v<version>/`. Its manifest records the exact
+source commit, signing team, SHA-256 hashes, and qualification limits. Preview
+builds are **not notarized** and do not claim physical lid-close qualification.
+The ordinary unsigned review packager remains available for local development.
+
+After the exact commit is shipped to public main, publish the verified build:
+
+```sh
+npm run release:inbox -- --publish
+```
+
+Publishing creates an `inbox-v<version>` draft in the configured owner repository,
+uploads both downloads, checksums and the manifest, then publishes it as a
+prerelease. Automatic updates remain disabled; install previews manually.
+The legacy `release.mjs` and `publish-download.mjs` paths still concern upstream
+packaging and must not be used to publish this local-contract preview.
 
 ## The three values the owner provides
 

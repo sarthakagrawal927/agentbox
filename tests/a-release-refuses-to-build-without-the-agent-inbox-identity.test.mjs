@@ -24,15 +24,14 @@ const GOOD = { bundleId: 'com.example.agentinbox', developerIdTeamId: 'ABCDE1234
 describe('the committed identity', () => {
   const committed = JSON.parse(fs.readFileSync(path.join(repo, IDENTITY_FILE), 'utf8'));
 
-  it('is marked unset, with every value empty, until the owner chooses', () => {
-    expect(committed._status).toMatch(/^UNSET\b/);
-    expect(committed.bundleId).toBeNull();
-    expect(committed.developerIdTeamId).toBeNull();
-    expect(committed.updateFeed).toBeNull();
+  it('names this fork and an independent release identity', () => {
+    expect(checkReleaseIdentity(committed).ok).toBe(true);
+    expect(committed.bundleId).toBe('com.significanthobbies.agentinbox');
+    expect(committed.updateFeed).toBe('sarthakagrawal927/agentbox');
   });
 
   it('is refused, naming all three values', () => {
-    const r = checkReleaseIdentity(committed);
+    const r = checkReleaseIdentity({bundleId:null,developerIdTeamId:null,updateFeed:null});
     expect(r.ok).toBe(false);
     expect(r.problems.join('\n')).toMatch(/bundleId is unset/);
     expect(r.problems.join('\n')).toMatch(/developerIdTeamId is unset/);
@@ -79,19 +78,24 @@ describe('checking an identity', () => {
   });
 });
 
-describe('the scripts, run for real against the committed file', () => {
-  let stubs, calls;
+describe('the scripts, run for real against an unset identity', () => {
+  let stubs, calls, fixtureRoot;
 
   beforeAll(() => {
     stubs = fs.mkdtempSync(path.join(os.tmpdir(), 'ab-release-stubs-'));
     calls = path.join(stubs, 'calls.log');
+    fixtureRoot=path.join(stubs,'checkout');
+    for(const file of ['scripts/release.mjs','scripts/publish-download.mjs','scripts/lib/release-identity.mjs','scripts/lib/live-download.mjs','shared/product-name.mjs']){
+      const destination=path.join(fixtureRoot,file);fs.mkdirSync(path.dirname(destination),{recursive:true});fs.copyFileSync(path.join(repo,file),destination);
+    }
+    fs.writeFileSync(path.join(fixtureRoot,IDENTITY_FILE),JSON.stringify({bundleId:null,developerIdTeamId:null,updateFeed:null}));
     for (const tool of ['npm', 'npx', 'security', 'gh', 'xcrun', 'codesign', 'spctl']) {
       fs.writeFileSync(path.join(stubs, tool), `#!/bin/sh\necho "${tool} $*" >> "${calls}"\nexit 1\n`, { mode: 0o755 });
     }
   });
   afterAll(() => { if (stubs) fs.rmSync(stubs, { recursive: true, force: true }); });
 
-  const run = (script, args, env = {}) => spawnSync(process.execPath, [path.join(repo, 'scripts', script), ...args], {
+  const run = (script, args, env = {}) => spawnSync(process.execPath, [path.join(fixtureRoot, 'scripts', script), ...args], {
     cwd: repo, encoding: 'utf8',
     env: { HOME: process.env.HOME, PATH: `${stubs}${path.delimiter}/usr/bin${path.delimiter}/bin`, ...env },
   });
