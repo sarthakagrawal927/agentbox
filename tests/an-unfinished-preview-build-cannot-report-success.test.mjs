@@ -21,6 +21,8 @@ import {registerHooks,syncBuiltinESMExports} from 'node:module';
 import cp from 'node:child_process';
 Object.defineProperty(process,'platform',{value:'darwin'});
 Object.defineProperty(process,'arch',{value:'arm64'});
+const realSetTimeout=globalThis.setTimeout;
+globalThis.setTimeout=(callback,ms,...args)=>realSetTimeout(callback,ms===600000?30:ms,...args);
 cp.execFileSync=(file,args)=>{
  if(file==='git')return args[0]==='rev-parse'?'a'.repeat(40):'';
  if(file==='/usr/bin/security')return '1) "Developer ID Application: Example (ABCDE12345)"';
@@ -31,7 +33,7 @@ const builder=\`import fs from 'node:fs';import path from 'node:path';
 export const Platform={MAC:{createTarget:()=>({})}};export const Arch={arm64:1};
 export async function build({config}){
  const outcome=process.env.RELEASE_TEST_OUTCOME;
- if(outcome==='unfinished')return new Promise(()=>{});
+ if(outcome==='unfinished'){process.once('beforeExit',()=>process.exit(0));return new Promise(()=>{});}
  if(outcome==='rejected')throw Error('signing failed');
  fs.mkdirSync(path.join(config.directories.output,'mac-arm64','Agent Inbox.app'),{recursive:true});
  for(const ext of ['zip','dmg'])fs.writeFileSync(path.join(config.directories.output,'Agent-Inbox-0.1.12-arm64.'+ext),'test archive');

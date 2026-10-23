@@ -84,7 +84,13 @@ async function main() {
  const helper=path.join(root,'native','awake','bin','AgentInboxAwake.app');
  execute('/usr/bin/codesign',['--force','--options','runtime','--timestamp','--sign',certificate,helper]);
  const {build,Platform,Arch}=await import('electron-builder');
- await build({targets:Platform.MAC.createTarget(['dmg','zip'],Arch.arm64),config:inboxReleaseConfig({output,identity,certificate,revision}),publish:'never',projectDir:root});
+ let buildTimer;
+ try {
+  await Promise.race([
+   build({targets:Platform.MAC.createTarget(['dmg','zip'],Arch.arm64),config:inboxReleaseConfig({output,identity,certificate,revision}),publish:'never',projectDir:root}),
+   new Promise((_,reject)=>{buildTimer=setTimeout(()=>reject(Error('Preview packaging did not finish within 10 minutes.')),600000);}),
+  ]);
+ } finally {clearTimeout(buildTimer);}
  const app=path.join(output,'mac-arm64','Agent Inbox.app');verifySignedApp(app,identity);
  for(const name of fs.readdirSync(output).filter(name=>name.endsWith('.dmg'))){
   const file=path.join(output,name);
@@ -99,4 +105,8 @@ async function main() {
  fs.writeFileSync(path.join(output,'SHA256SUMS'),assets.map(asset=>`${asset.sha256}  ${asset.name}`).join('\n')+'\n');
  console.log(`Built signed Inbox preview ${version}. Not notarized; physical lid-close qualification remains unverified.\n${manifestPath}`);
 }
-if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))await main().catch(error=>{console.error(error.message);process.exitCode=1;});
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
+ let completed=false;
+ process.once('exit',()=>{if(!completed)process.exitCode=1;});
+ try{await main();completed=true;}catch(error){console.error(error.message);process.exitCode=1;}
+}
