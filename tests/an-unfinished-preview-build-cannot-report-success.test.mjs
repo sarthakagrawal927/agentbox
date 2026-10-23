@@ -21,8 +21,6 @@ import {registerHooks,syncBuiltinESMExports} from 'node:module';
 import cp from 'node:child_process';
 Object.defineProperty(process,'platform',{value:'darwin'});
 Object.defineProperty(process,'arch',{value:'arm64'});
-const realSetTimeout=globalThis.setTimeout;
-globalThis.setTimeout=(callback,ms,...args)=>realSetTimeout(callback,ms===600000?30:ms,...args);
 cp.execFileSync=(file,args)=>{
  if(file==='git')return args[0]==='rev-parse'?'a'.repeat(40):'';
  if(file==='/usr/bin/security')return '1) "Developer ID Application: Example (ABCDE12345)"';

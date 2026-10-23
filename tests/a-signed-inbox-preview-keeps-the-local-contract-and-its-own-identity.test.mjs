@@ -9,7 +9,7 @@ it('keeps the local app contract while requiring Developer ID signing',()=>{
  const config=inboxReleaseConfig({output:'/disposable/output',identity,certificate:'Developer ID Application: Example (ABCDE12345)',revision:'a'.repeat(40)});
  expect(config).toMatchObject({appId:identity.bundleId,productName:'Agent Inbox',publish:null,forceCodeSigning:true,
   extraMetadata:{main:'main/local-inbox.mjs',productName:'Agent Inbox',bakedPosthogKey:null,releaseRevision:'a'.repeat(40)},
-  mac:{identity:'Developer ID Application: Example (ABCDE12345)',hardenedRuntime:true,notarize:false},dmg:{title:'Agent Inbox'}});
+  mac:{identity:'Example (ABCDE12345)',hardenedRuntime:true,notarize:false},dmg:{title:'Agent Inbox'}});
 });
 it('refuses a signing certificate from a different team',()=>{
  expect(()=>inboxReleaseConfig({output:'/x',identity,certificate:'Developer ID Application: Example (ZZZZZ99999)',revision:'a'.repeat(40)})).toThrow(/team/i);

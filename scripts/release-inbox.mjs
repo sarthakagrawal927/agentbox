@@ -26,7 +26,7 @@ export function inboxReleaseConfig({output,identity,certificate,revision}) {
  return {...base,appId:identity.bundleId,forceCodeSigning:true,
   artifactName:'Agent-Inbox-${version}-arm64.${ext}',
   extraMetadata:{...base.extraMetadata,releaseRevision:revision},
-  mac:{...base.mac,identity:certificate,hardenedRuntime:true,notarize:false},
+  mac:{...base.mac,identity:certificate.replace(/^Developer ID Application: /,''),hardenedRuntime:true,notarize:false},
   dmg:{...base.dmg,title:'Agent Inbox'}};
 }
 
@@ -84,13 +84,7 @@ async function main() {
  const helper=path.join(root,'native','awake','bin','AgentInboxAwake.app');
  execute('/usr/bin/codesign',['--force','--options','runtime','--timestamp','--sign',certificate,helper]);
  const {build,Platform,Arch}=await import('electron-builder');
- let buildTimer;
- try {
-  await Promise.race([
-   build({targets:Platform.MAC.createTarget(['dmg','zip'],Arch.arm64),config:inboxReleaseConfig({output,identity,certificate,revision}),publish:'never',projectDir:root}),
-   new Promise((_,reject)=>{buildTimer=setTimeout(()=>reject(Error('Preview packaging did not finish within 10 minutes.')),600000);}),
-  ]);
- } finally {clearTimeout(buildTimer);}
+ await build({targets:Platform.MAC.createTarget(['dmg','zip'],Arch.arm64),config:inboxReleaseConfig({output,identity,certificate,revision}),publish:'never',projectDir:root});
  const app=path.join(output,'mac-arm64','Agent Inbox.app');verifySignedApp(app,identity);
  for(const name of fs.readdirSync(output).filter(name=>name.endsWith('.dmg'))){
   const file=path.join(output,name);
