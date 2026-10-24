@@ -477,11 +477,16 @@ export function answer(storeRoot, id, allow, note) {
   // may never have seen, which is the hole this whole section is about.
   const card = cardShown(storeRoot, id);
   if (!card) return false;
+  const answerName = `${id}.answer.json`;
+  // A signed answer is final even if the card is still visible for a moment.
+  // Forged or malformed entries remain replaceable so the worker-writable
+  // spool cannot suppress the founder's decision.
+  if (answerIsHers(id, readSpoolJson(dir, answerName))) return false;
   const at = Date.now();
   // SIGNED, so the process waiting on it can tell her decision from one a
   // worker wrote, and bound to the card so it cannot be honoured against a
   // different action. See `answerIsHers` above for why nothing weaker works.
   const sig = crypto.sign(null, decisionBytes(id, !!allow, note ?? null, at, card), keys().privateKey).toString('base64');
-  return writeSpoolFile(dir, `${id}.answer.json`,
+  return writeSpoolFile(dir, answerName,
     JSON.stringify({ allow: !!allow, note: note ?? null, at, card, sig }));
 }

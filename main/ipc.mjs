@@ -98,7 +98,7 @@ const NO_UPDATER = {
   install: () => false,
 };
 
-export function registerIpc({ store, supervisor, config, window, analytics = NO_ANALYTICS, docGrants = null, updater = NO_UPDATER, host, team = null, threadDiscovery = null, lifecycleMonitor = null, localInbox = false }) {
+export function registerIpc({ store, supervisor, config, window, analytics = NO_ANALYTICS, docGrants = null, updater = NO_UPDATER, host, team = null, threadDiscovery = null, lifecycleMonitor = null, localInbox = false, localUsage = null }) {
   // The three Electron things, or a plain Node stand-in for them. There is no
   // default: a caller that forgets says so here rather than throwing eighty
   // lines further down on `ipcMain.handle` of undefined.
@@ -201,6 +201,7 @@ export function registerIpc({ store, supervisor, config, window, analytics = NO_
     if ((ok || settled) && !window.isDestroyed()) {
       window.webContents.send('zero:approval-answered', { id, allow: !!allow });
     }
+    if ((ok || settled) && localInbox) localUsage?.record('permissionResponse');
     return ok || settled;
   };
 
@@ -591,6 +592,9 @@ export function registerIpc({ store, supervisor, config, window, analytics = NO_
     // race the run usually wins, so she would pick a model and watch the old one
     // take the task. `answerItem` writes both, and it writes the model first.
     const out = await submitReply(supervisor,{product,id,answer,status,permissionMode,now:!!now},()=>store.answerItem(product, id, { answer, status, priority, permissionMode, model, effort, inReplyTo: thread }));
+    if (out && localInbox && !isPractice(product) && typeof answer === 'string' && answer.trim() && answer !== '(withdrawn)') {
+      localUsage?.record('savedReply');
+    }
     // A REPLY ON A ROW A TEAMMATE GAVE YOU HANDS IT BACK TO THEM, so the
     // conversation moves to their inbox instead of sitting in both
     // (shared/team-rules.mjs handedOnByReply). Archiving hands nothing on.

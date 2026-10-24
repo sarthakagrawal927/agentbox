@@ -55,8 +55,15 @@ configuration management are outside this first release.
 
 Local scope is enforced at startup and before settings writes, including for
 previously saved opt-ins. Automatic machine-based pacing, memory gating, orphan
-process termination, autonomous project work and telemetry stay disabled in this
-fork. Manual worker concurrency and verified replies remain inbox controls.
+process termination, autonomous project work, cloud telemetry and content-bearing
+analytics stay disabled in this fork. A separate local usage counter stores only
+timestamps and fixed event kinds for foreground-window focus, saved replies and
+newly persisted explicit permission decisions. A saved reply means its local
+record was persisted; it does not assert provider delivery. Focus is reported as
+a foreground-device proxy, separate from core actions. The read-only export
+reports an exact rolling 30-day window and marks complete, partial or unknown
+coverage; it never reads conversation content or sends data off this machine. Manual worker
+concurrency and verified replies remain inbox controls.
 Saved settings are preserved rather than silently rewritten by startup.
 
 The agent battery counts only observed live sessions/processes and running or

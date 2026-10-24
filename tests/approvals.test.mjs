@@ -45,6 +45,20 @@ describe('the approvals spool', () => {
     expect(answer(r, '../escape', true)).toBe(false);
   });
 
+  it('preserves the first signed decision when the same card is clicked again', () => {
+    const r = root();
+    const dir = spoolDir(r);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'once.request.json'), JSON.stringify({ id: 'once', at: 1, tool: 'Bash', input: {} }));
+    expect(listPending(r).map((x) => x.id)).toEqual(['once']);
+
+    expect(answer(r, 'once', true)).toBe(true);
+    const original = fs.readFileSync(path.join(dir, 'once.answer.json'), 'utf8');
+    expect(answer(r, 'once', false)).toBe(false);
+    expect(fs.readFileSync(path.join(dir, 'once.answer.json'), 'utf8')).toBe(original);
+    expect(JSON.parse(original).allow).toBe(true);
+  });
+
   it('an empty or missing spool is just an empty list', () => {
     expect(listPending(root())).toEqual([]);
   });

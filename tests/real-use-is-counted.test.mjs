@@ -104,7 +104,7 @@ describe('used today', () => {
   it('is wired to launch and to the window coming forward', () => {
     const main = read('main/main.mjs');
     expect(main).toMatch(/const usedToday = createDailyCount\(\(name\) => analytics\.track\(name\)\)/);
-    expect(main).toMatch(/window\.on\('focus', \(\) => usedToday\(Date\.now\(\)\)\)/);
+    expect(main).toMatch(/window\.on\('focus', \(\) => \{\s+usedToday\(Date\.now\(\)\);\s+localUsage\?\.record\('foregroundFocus'\);\s+\}\)/);
   });
 });
 

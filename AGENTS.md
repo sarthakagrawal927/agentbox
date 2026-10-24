@@ -104,6 +104,10 @@ battery in its floating pill, notifications, linking, replies and per-request
 permissions. PerformanceDaddy retains measured workload/device diagnosis;
 ContextDaddy owns skills/plugins/MCP/context policy and consumption telemetry.
 Do not add allowance polling, machine optimization, cleanup, autonomous project
-driving, cloud teams or telemetry to the local entry point. Preserve upstream
+driving, cloud teams, cloud telemetry or content-bearing analytics to the local
+entry point. The product contract permits only content-free local aggregate usage
+counters; preserve their bounds, keep foreground-device proxies separate from
+core actions, and keep them apart from upstream analytics.
+Preserve upstream
 behavior outside that entry point. Keep PerformanceDaddy compatibility until
 replacement parity is qualified; a hook or process is never a reply channel.

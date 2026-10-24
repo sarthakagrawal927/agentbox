@@ -39,6 +39,7 @@ import { createCompanion } from './companion.mjs';
 import { createPlacementStore } from './companion-placement.mjs';
 import { createThreadDiscovery } from './local-thread-discovery.mjs';
 import { createLifecycleMonitor } from './lifecycle-monitor.mjs';
+import { createLocalUsage } from './local-usage.mjs';
 import { installInboxRecovery } from './inbox-recovery.mjs';
 import { DOC_SCHEMES, DocGrants, docPath } from './doc-scheme.mjs';
 import { quietTheFramesScrollbars } from './frame-scrollbars.mjs';
@@ -187,6 +188,7 @@ if (!PROFILE && !LOCAL_INBOX) try {
 // `configDir` in main/config.mjs is the whole rule and says what she saw when
 // it was missing.
 const dataDir = LOCAL_INBOX ? app.getPath('userData') : configDir({ appDir, userData: app.getPath('userData'), packaged: app.isPackaged });
+let localUsage = null;
 
 // AND WHERE WHAT SHE TYPES LIVES, WHICH IS NEVER THE CHECKOUT (w-3dc46f3a67,
 // 2026-09-21). Her standing instructions and her writing rules used to be
@@ -632,7 +634,10 @@ async function createWindow() {
     lastScreenDetail = next;
     window.webContents.send('zero:screen-detail', { detail: next });
   };
-  window.on('focus', () => usedToday(Date.now()));
+  window.on('focus', () => {
+    usedToday(Date.now());
+    localUsage?.record('foregroundFocus');
+  });
   window.on('move', tellScreenDetail);
   window.on('moved', tellScreenDetail);
   electronScreen.on('display-metrics-changed', tellScreenDetail);
@@ -681,7 +686,7 @@ async function createWindow() {
   const ipc = registerIpc({
     store, supervisor, config, window, analytics, docGrants, updater,
     host: { ipcMain, app, dialog },
-    team, threadDiscovery, lifecycleMonitor, localInbox: LOCAL_INBOX,
+    team, threadDiscovery, lifecycleMonitor, localInbox: LOCAL_INBOX, localUsage,
   });
   pushUpdate = ipc.push;
   // Bind the menu's approval door before starting background services.
@@ -1065,6 +1070,7 @@ async function createWindow() {
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
+  if (LOCAL_INBOX) localUsage = createLocalUsage({ dataDir });
   app.on('second-instance', () => {
     if (window) {
       if (window.isMinimized()) window.restore();
