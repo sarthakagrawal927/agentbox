@@ -53,6 +53,7 @@ describe('local usage measurement', () => {
       coreActionDeviceUnits: 1,
       coverageSince: new Date(now).toISOString(),
       coverageStatus: 'partial',
+      storageStatus: 'available',
       coverageComplete: false,
       lastUseAt: new Date(now).toISOString(),
       lastForegroundAt: new Date(now).toISOString(),
@@ -93,6 +94,7 @@ describe('local usage measurement', () => {
       coreActionDeviceUnits: 0,
       coverageSince: null,
       coverageStatus: 'unknown',
+      storageStatus: 'missing',
       coverageComplete: false,
       lastUseAt: null,
       lastForegroundAt: null,
@@ -181,5 +183,17 @@ describe('local usage measurement', () => {
       { name: 'saved_reply', count: 1, lastSeen: new Date(now).toISOString(), precision: 'estimate' },
       { name: 'permission_response', count: 0, lastSeen: null, precision: 'estimate' },
     ]);
+  });
+
+  it('reports an absent counter file as missing with unknown coverage, never zero events', () => {
+    const root = tempRoot();
+    const script = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'scripts', 'export-local-usage.mjs');
+    const output = execFileSync(process.execPath, [script, '--usage-file', localUsageFile(root), '--portfolio'], { encoding: 'utf8' });
+    const record = JSON.parse(output).usage.records['agent-inbox'];
+
+    expect(record).toMatchObject({ tracking: 'missing', core: { count: null, coverage: 'unknown' } });
+    expect(record.proxy).toEqual({ count: null, unit: 'devices', precision: 'unknown' });
+    expect(record.events).toEqual([]);
+    expect(record.evidence[0].note).toContain('No local counter file exists');
   });
 });

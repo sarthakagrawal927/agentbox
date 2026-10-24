@@ -14,6 +14,7 @@ const EMPTY = () => ({
   localDeviceUnits: 0,
   coreActionDeviceUnits: 0,
   coverageStatus: 'unknown',
+  storageStatus: 'unknown',
   coverageSince: null,
   coverageComplete: false,
   lastUseAt: null,
@@ -95,7 +96,10 @@ export function readLocalUsageReport({ file, now = Date.now() } = {}) {
     if (info.isSymbolicLink() || !info.isFile() || info.size > MAX_FILE_BYTES) return report;
     state = JSON.parse(fs.readFileSync(file, 'utf8'));
     if (!validState(state)) return report;
-  } catch { return report; }
+  } catch (error) {
+    if (error?.code === 'ENOENT') report.storageStatus = 'missing';
+    return report;
+  }
 
   const cutoff = now - WINDOW_MS;
   const events = state.events.filter((event) => event.at >= cutoff && event.at <= now);
@@ -108,6 +112,7 @@ export function readLocalUsageReport({ file, now = Date.now() } = {}) {
   report.localDeviceUnits = events.length ? 1 : 0;
   report.coreActionDeviceUnits = coreEvents.length ? 1 : 0;
   report.coverageSince = new Date(state.coverageSince).toISOString();
+  report.storageStatus = 'available';
   report.coverageComplete = state.coverageSince <= cutoff
     && (state.droppedThroughAt === null || state.droppedThroughAt < cutoff);
   report.coverageStatus = report.coverageComplete ? 'complete' : 'partial';
