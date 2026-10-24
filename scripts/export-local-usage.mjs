@@ -39,7 +39,7 @@ if (portfolioMode) {
           lastUsedAt: null,
           qualified: false,
           precision: 'unknown',
-          coverage: report.storageStatus === 'missing' ? 'unknown' : 'partial',
+          coverage: report.storageStatus === 'available' ? 'partial' : 'unknown',
         },
         tracking: report.storageStatus === 'missing' ? 'missing' : 'partial',
         evidence: [{
@@ -47,10 +47,12 @@ if (portfolioMode) {
           date: checkedAtIso,
           note: report.storageStatus === 'missing'
             ? 'No local counter file exists; historical coverage is unknown and no owner history or QA exclusion was checked.'
-            : `Content-free local event-kind and timestamp counters; coverage since ${report.coverageSince}; no owner history or QA exclusion was checked.`,
+            : report.storageStatus !== 'available'
+              ? 'The local counter file is unavailable; counts and historical coverage are unknown, and no owner history or QA exclusion was checked.'
+              : `Content-free local event-kind and timestamp counters; coverage since ${report.coverageSince}; no owner history or QA exclusion was checked.`,
         }],
         limitations: 'Foreground focus is only a local-device proxy. Counters cover only recorded events; no continuity proof, independent QA exclusion or natural-use qualification is available.',
-        events: report.storageStatus === 'missing' ? [] : [
+        events: report.storageStatus !== 'available' ? [] : [
           { name: 'foreground_focus', count: report.counts.foregroundFocuses, lastSeen: report.eventLastSeen.foregroundFocuses, precision: report.coverageComplete ? 'exact' : 'estimate' },
           { name: 'saved_reply', count: report.counts.savedReplies, lastSeen: report.eventLastSeen.savedReplies, precision: report.coverageComplete ? 'exact' : 'estimate' },
           { name: 'permission_response', count: report.counts.permissionResponses, lastSeen: report.eventLastSeen.permissionResponses, precision: report.coverageComplete ? 'exact' : 'estimate' },

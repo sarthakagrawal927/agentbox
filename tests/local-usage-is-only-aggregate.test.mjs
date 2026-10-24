@@ -196,4 +196,17 @@ describe('local usage measurement', () => {
     expect(record.events).toEqual([]);
     expect(record.evidence[0].note).toContain('No local counter file exists');
   });
+
+  it('keeps malformed counter files unknown instead of exporting estimated zero events', () => {
+    const root = tempRoot();
+    fs.writeFileSync(localUsageFile(root), '{malformed');
+    const script = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'scripts', 'export-local-usage.mjs');
+    const output = execFileSync(process.execPath, [script, '--usage-file', localUsageFile(root), '--portfolio'], { encoding: 'utf8' });
+    const record = JSON.parse(output).usage.records['agent-inbox'];
+
+    expect(record).toMatchObject({ tracking: 'partial', core: { count: null, coverage: 'unknown' } });
+    expect(record.proxy).toEqual({ count: null, unit: 'devices', precision: 'unknown' });
+    expect(record.events).toEqual([]);
+    expect(record.evidence[0].note).toContain('local counter file is unavailable');
+  });
 });
