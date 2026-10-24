@@ -11,7 +11,7 @@
 // cannot rot quietly.
 
 export const READ_FROM = "2.1.309";
-export const READ_AT = "2026-10-23";
+export const READ_AT = "2026-10-24";
 export const CLAUDE_COMMANDS = [
   {
     "name": "model",
