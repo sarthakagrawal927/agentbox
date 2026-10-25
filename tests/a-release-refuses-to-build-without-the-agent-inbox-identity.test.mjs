@@ -27,7 +27,7 @@ describe('the committed identity', () => {
   it('names this fork and an independent release identity', () => {
     expect(checkReleaseIdentity(committed).ok).toBe(true);
     expect(committed.bundleId).toBe('com.significanthobbies.agentinbox');
-    expect(committed.updateFeed).toBe('sarthakagrawal927/agentbox');
+    expect(committed.updateFeed).toBe('sass-maker/agentbox');
   });
 
   it('is refused, naming all three values', () => {

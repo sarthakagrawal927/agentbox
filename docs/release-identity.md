@@ -15,7 +15,7 @@ malformed, or still upstream's.
 
 The release identity is configured for the owner-authorized Agent Inbox preview:
 bundle ID `com.significanthobbies.agentinbox`, the available Fleet Developer ID
-team, and releases in `sarthakagrawal927/agentbox`. The local review build keeps
+team, and releases in `sass-maker/agentbox`. The local review build keeps
 its separate `com.significanthobbies.agentinbox.local` ID.
 
 ## Signed Inbox previews
