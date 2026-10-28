@@ -36,9 +36,11 @@ All three must use the same representative tasks and show an unavailable
 connection state. Static previews demonstrate composition only; they do not
 establish running behavior, accessibility, responsiveness or release readiness.
 
-There is no separate landing page for this development fork. Future marketing,
-onboarding and the first useful app screen must share the selected product
-identity, vocabulary and verified claims.
+The public page uses direction B, attention desk, selected on 2026-10-28.
+Its centered product introduction leads into a three-part inbox illustration.
+The page shares the app's neutral black identity and verified-conversation
+vocabulary, labels its fictional tasks, and links to the existing preview.
+On narrow screens, the attention list remains and the inspector is hidden.
 
 ## Owner refinement: neutral black
 

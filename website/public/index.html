@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agent Inbox is a local macOS inbox for Claude Code and Codex conversations. Notice attention requests and reach the right verified conversation.">
+  <meta name="theme-color" content="#050505">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Agent Inbox — One place for your coding agents">
+  <meta property="og:description" content="A local macOS inbox for agent attention, verified replies and conversation handoff. Explore the experimental preview.">
+  <meta name="twitter:card" content="summary">
+  <title>Agent Inbox — One place for your coding agents</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <nav aria-label="Main navigation">
+    <a class="logo" href="/" aria-label="Agent Inbox home"><span class="brand-mark" aria-hidden="true">↳</span>Agent Inbox</a>
+    <div><a href="#how">How it works</a><a href="https://github.com/sass-maker/agentbox">Source ↗</a></div>
+  </nav>
+  <main class="wrap" id="main">
+    <header class="titlecenter">
+      <span class="tag">A local macOS inbox for coding agents</span>
+      <h1>Every agent.<br>One place to respond.</h1>
+      <p>Bring local Claude Code and Codex conversations into a clear attention queue. Working sessions stay separate from the ones that need you.</p>
+      <div class="actions">
+        <a class="button" href="https://github.com/sass-maker/agentbox/releases/tag/inbox-v0.1.12">View the macOS preview ↗</a>
+        <a class="button alt" href="#how">How it works ↓</a>
+      </div>
+      <div class="caption">Experimental preview · Developer ID-signed, not notarized.</div>
+    </header>
+    <section class="desk" aria-label="Illustrative Agent Inbox interface">
+      <aside aria-label="Illustrative inbox navigation"><strong>Agent Inbox</strong><p>Needs you · 2</p><p>Working · 3</p><p>Saved threads</p><p>Connections</p></aside>
+      <div class="desk-main">
+        <div class="mockhead"><strong>Needs your attention</strong><span class="demo-source">Example workspace</span></div>
+        <div class="row"><span class="dot" aria-hidden="true"></span><div><strong>Review the next step</strong><p>Claude Code · Website</p></div><span class="label">Needs input</span></div>
+        <div class="row"><span class="dot" style="background:#92a7c1" aria-hidden="true"></span><div><strong>Finish the export flow</strong><p>Codex · App</p></div><span class="label" style="color:#92a7c1">Working</span></div>
+        <div class="row"><span class="dot" style="background:#888" aria-hidden="true"></span><div><strong>Check the saved conversation</strong><p>Claude Code · Research</p></div><span class="label" style="color:#999">Saved thread</span></div>
+      </div>
+      <div class="inspector"><span class="tag">Verified connection</span><h3>Review the next step</h3><p>Read the latest request and reply to this exact conversation.</p><div class="demo-reply">Write your reply…<small>Illustrative reply area</small></div><p class="caption">Replies require a verified connection.</p></div>
+    </section>
+    <p class="demo-caption">Illustrative interface with fictional tasks. This page does not connect to your agents.</p>
+    <section class="features" id="how" aria-label="How Agent Inbox works">
+      <div><h2 style="font-size:16px;font-weight:550">Notice what needs you.</h2><p>Keep working, needs input, failed and unavailable states distinct. Saved transcripts do not count as live work.</p></div>
+      <div><h2 style="font-size:16px;font-weight:550">Reach the right conversation.</h2><p>Reply when the connection is verified. Otherwise, open the app that owns the conversation. Permission decisions stay separate from ordinary replies.</p></div>
+      <div><h2 style="font-size:16px;font-weight:550">Keep the inbox local.</h2><p>Inbox state stays on your Mac. Agent requests use your existing provider account and may travel to that provider.</p></div>
+    </section>
+    <section class="release-note" aria-label="Preview status"><div><h2>A useful experiment, still being evaluated.</h2><p>The macOS app is a development preview. Physical sleep/wake, notification delivery and outside-session parity still need qualification. This site introduces the product; it does not promise a finished public release.</p></div><a class="button alt" href="https://github.com/sass-maker/agentbox/blob/main/PRODUCT.md">Read the product scope ↗</a></section>
+  </main>
+  <footer><span>Agent Inbox · A local macOS experiment</span><span>Built on <a href="https://github.com/savannahfeder/agentbox">Agentbox</a> · <a href="https://github.com/sass-maker/agentbox/blob/main/LICENSE">GPL-3.0-or-later</a></span></footer>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "agent-inbox-website",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node ../scripts/test-what-changed.mjs tests/the-public-website-only-publishes-static-assets.test.mjs"
+  }
+}

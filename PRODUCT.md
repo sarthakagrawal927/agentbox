@@ -141,6 +141,7 @@ Existing PerformanceDaddy hook commands continue to work during migration; no
 real provider settings have been changed. PerformanceDaddy workflow navigation
 remains until replacement parity is qualified.
 
-There is no separate landing page for this development fork. Its entry point is
-the local app and the upstream README. A future landing page must use the same
-identity and describe only verified behavior.
+The public website in `website/` uses the owner-selected attention-desk direction
+and links to the existing macOS preview and source. Its fictional interface is
+labelled illustrative. Website publication does not change the local app scope
+or establish physical-device or outside-session qualification.
