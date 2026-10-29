@@ -7,7 +7,7 @@ const worker = resolve(output, 'workers/default');
 const assets = resolve(worker, 'assets');
 mkdirSync(assets, { recursive: true });
 // Only the authored public assets enter the deployable artifact.
-for (const file of ['index.html', 'style.css', 'favicon.svg', 'robots.txt', '_headers']) {
+for (const file of ['index.html', 'style.css', 'favicon.svg', 'robots.txt', 'sitemap.xml', '_headers']) {
   copyFileSync(resolve(root, 'public', file), resolve(assets, file));
 }
 writeFileSync(resolve(output, 'config.json'), JSON.stringify({ buildContext: { isPreview: false } }));

@@ -11,12 +11,12 @@ test('public build excludes unrelated product files and declares an assets-only 
   const temp = mkdtempSync(join(tmpdir(), 'agent-inbox-site-test-'));
   mkdirSync(join(temp, 'public'));
   copyFileSync(join(root, 'build.mjs'), join(temp, 'build.mjs'));
-  for (const name of ['index.html', 'style.css', 'favicon.svg', 'robots.txt', '_headers']) copyFileSync(join(root, 'public', name), join(temp, 'public', name));
+  for (const name of ['index.html', 'style.css', 'favicon.svg', 'robots.txt', 'sitemap.xml', '_headers']) copyFileSync(join(root, 'public', name), join(temp, 'public', name));
   writeFileSync(join(temp, 'public', 'internal-note.txt'), 'synthetic file that must not be published');
   writeFileSync(join(temp, 'app-state.json'), '{"synthetic":true}');
   execFileSync(process.execPath, [join(temp, 'build.mjs')]);
   const out = join(temp, '.cloudflare/output/v0/workers/default');
-  assert.deepEqual(readdirSync(join(out, 'assets')).sort(), ['_headers', 'favicon.svg', 'index.html', 'robots.txt', 'style.css']);
+  assert.deepEqual(readdirSync(join(out, 'assets')).sort(), ['_headers', 'favicon.svg', 'index.html', 'robots.txt', 'sitemap.xml', 'style.css']);
   const config = JSON.parse(readFileSync(join(out, 'worker.config.json'), 'utf8'));
   assert.equal(config.manifest, undefined);
   assert.equal(config.env, undefined);
